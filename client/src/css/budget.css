@@ -1,0 +1,217 @@
+/* ====================================================================
+   Budget & Expense Tracker Styling
+   ==================================================================== */
+
+.budget-page {
+  padding: 3rem 0 5rem;
+}
+
+.budget-trip-selector {
+  background: var(--bg-card);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.selector-label-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.selector-dropdown {
+  min-width: 280px;
+}
+
+/* Summary Cards Grid */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.summary-card {
+  background: var(--bg-card);
+  padding: 1.75rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+}
+
+.card-budget::before { background-color: var(--primary); }
+.card-spent::before { background-color: var(--accent); }
+.card-remaining::before { background-color: var(--success); }
+.card-daily::before { background-color: #8b5cf6; }
+
+.summary-card-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--slate);
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.summary-card-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+.summary-card-sub {
+  font-size: 0.8rem;
+  color: var(--slate-light);
+  margin-top: 0.25rem;
+}
+
+/* Budget View Split: Chart & Form */
+.budget-main-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.chart-card, .form-card {
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.chart-container-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+/* Category Legend & Bar Indicators */
+.category-bars {
+  width: 100%;
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cat-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cat-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.cat-bar-track {
+  height: 9px;
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.cat-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
+
+/* Color codes for Categories */
+.fill-Food { background-color: #f97316; }
+.fill-Travel { background-color: #0284c7; }
+.fill-Hotels { background-color: #10b981; }
+.fill-Other { background-color: #8b5cf6; }
+
+/* Expenses Table / List Section */
+.expenses-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 2rem;
+}
+
+.expenses-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.expenses-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.expenses-table th {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  font-size: 0.825rem;
+  text-transform: uppercase;
+  color: var(--slate);
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+}
+
+.expenses-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.925rem;
+  vertical-align: middle;
+}
+
+.expenses-table tr:hover {
+  background-color: var(--bg-page);
+}
+
+.expense-amount-cell {
+  font-weight: 700;
+  color: var(--dark);
+}
+
+/* Responsive */
+@media (max-width: 920px) {
+  .budget-main-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .expenses-table-responsive {
+    overflow-x: auto;
+  }
+}

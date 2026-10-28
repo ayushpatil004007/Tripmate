@@ -1,6 +1,7 @@
 // Explore Destinations & User Trips Dashboard Page
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../utils/api';
 import '../css/dashboard.css';
 
 const ExploreDashboard = ({ user }) => {
@@ -46,13 +47,12 @@ const ExploreDashboard = ({ user }) => {
   // Fetch destinations from backend REST API
   const fetchDestinations = async () => {
     try {
-      const res = await fetch('/api/destinations');
-      const data = await res.json();
-      if (data.success) {
+      const data = await apiFetch('/api/destinations');
+      if (data?.success) {
         setDestinations(data.data);
       }
     } catch (err) {
-      console.error('Failed to fetch destinations:', err);
+      console.error('Failed to fetch destinations:', err.message);
     }
   };
 
@@ -60,15 +60,12 @@ const ExploreDashboard = ({ user }) => {
   const fetchUserTrips = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/trips', {
-        headers: getAuthHeaders()
-      });
-      const data = await res.json();
-      if (data.success) {
+      const data = await apiFetch('/api/trips');
+      if (data?.success) {
         setTrips(data.data);
       }
     } catch (err) {
-      setErrorMsg('Failed to load your trips. Please refresh.');
+      setErrorMsg(err.message || 'Failed to load your trips. Please refresh.');
     } finally {
       setLoading(false);
     }
@@ -131,17 +128,10 @@ const ExploreDashboard = ({ user }) => {
       const url = editingTripId ? `/api/trips/${editingTripId}` : '/api/trips';
       const method = editingTripId ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      await apiFetch(url, {
         method,
-        headers: getAuthHeaders(),
         body: JSON.stringify(tripForm)
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Operation failed');
-      }
 
       setSuccessMsg(editingTripId ? 'Trip updated successfully!' : 'Trip created successfully!');
       setTimeout(() => setSuccessMsg(''), 3000);
@@ -159,16 +149,9 @@ const ExploreDashboard = ({ user }) => {
     }
 
     try {
-      const res = await fetch(`/api/trips/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
+      await apiFetch(`/api/trips/${id}`, {
+        method: 'DELETE'
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to delete trip');
-      }
 
       setSuccessMsg('Trip deleted successfully');
       setTimeout(() => setSuccessMsg(''), 3000);

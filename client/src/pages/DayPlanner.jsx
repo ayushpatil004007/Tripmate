@@ -1,6 +1,7 @@
 // Day Planner Itinerary Page
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { apiFetch } from '../utils/api';
 import '../css/planner.css';
 
 const DayPlanner = () => {
@@ -42,9 +43,8 @@ const DayPlanner = () => {
   useEffect(() => {
     const fetchTrips = async () => {
       try {
-        const res = await fetch('/api/trips', { headers: getAuthHeaders() });
-        const data = await res.json();
-        if (data.success && data.data.length > 0) {
+        const data = await apiFetch('/api/trips');
+        if (data?.success && data.data.length > 0) {
           setTrips(data.data);
 
           // Check if URL specifies tripId query param
@@ -58,7 +58,7 @@ const DayPlanner = () => {
           }
         }
       } catch (err) {
-        setErrorMsg('Failed to load trips');
+        setErrorMsg(err.message || 'Failed to load trips');
       }
     };
 
@@ -76,9 +76,8 @@ const DayPlanner = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch(`/api/itinerary?tripId=${tripId}`, { headers: getAuthHeaders() });
-      const data = await res.json();
-      if (data.success) {
+      const data = await apiFetch(`/api/itinerary?tripId=${tripId}`);
+      if (data?.success) {
         setItineraryItems(data.data);
 
         // Determine highest day number recorded or default to 3
@@ -87,7 +86,7 @@ const DayPlanner = () => {
         setMaxDay(highest);
       }
     } catch (err) {
-      setErrorMsg('Failed to fetch itinerary');
+      setErrorMsg(err.message || 'Failed to fetch itinerary');
     } finally {
       setLoading(false);
     }
@@ -128,14 +127,10 @@ const DayPlanner = () => {
         visitOrder: Number(activityForm.visitOrder)
       };
 
-      const res = await fetch(url, {
+      await apiFetch(url, {
         method,
-        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Operation failed');
 
       setSuccessMsg(editingItemId ? 'Activity updated!' : 'Activity added to itinerary!');
       setTimeout(() => setSuccessMsg(''), 3000);
@@ -176,12 +171,9 @@ const DayPlanner = () => {
     if (!window.confirm('Remove this activity from itinerary?')) return;
 
     try {
-      const res = await fetch(`/api/itinerary/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
+      await apiFetch(`/api/itinerary/${id}`, {
+        method: 'DELETE'
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to remove');
 
       setSuccessMsg('Activity removed');
       setTimeout(() => setSuccessMsg(''), 3000);

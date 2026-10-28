@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import ExpenseChart from '../components/ExpenseChart';
+import { apiFetch } from '../utils/api';
 import '../css/budget.css';
 
 const BudgetTracker = () => {
@@ -45,9 +46,8 @@ const BudgetTracker = () => {
   useEffect(() => {
     const fetchTrips = async () => {
       try {
-        const res = await fetch('/api/trips', { headers: getAuthHeaders() });
-        const data = await res.json();
-        if (data.success && data.data.length > 0) {
+        const data = await apiFetch('/api/trips');
+        if (data?.success && data.data.length > 0) {
           setTrips(data.data);
 
           // Check if URL specifies tripId query param
@@ -61,7 +61,7 @@ const BudgetTracker = () => {
           }
         }
       } catch (err) {
-        setErrorMsg('Failed to load trips');
+        setErrorMsg(err.message || 'Failed to load trips');
       }
     };
 
@@ -80,9 +80,8 @@ const BudgetTracker = () => {
     setErrorMsg('');
     try {
       // Fetch budget summary
-      const sumRes = await fetch(`/api/expenses/summary/${tripId}`, { headers: getAuthHeaders() });
-      const sumData = await sumRes.json();
-      if (sumData.success) {
+      const sumData = await apiFetch(`/api/expenses/summary/${tripId}`);
+      if (sumData?.success) {
         setSummaryData(sumData.data);
         setBudgetForm({
           totalBudget: sumData.data.totalBudget,
@@ -91,13 +90,12 @@ const BudgetTracker = () => {
       }
 
       // Fetch expenses list
-      const expRes = await fetch(`/api/expenses?tripId=${tripId}`, { headers: getAuthHeaders() });
-      const expData = await expRes.json();
-      if (expData.success) {
+      const expData = await apiFetch(`/api/expenses?tripId=${tripId}`);
+      if (expData?.success) {
         setExpenses(expData.data);
       }
     } catch (err) {
-      setErrorMsg('Failed to fetch expense details');
+      setErrorMsg(err.message || 'Failed to fetch expense details');
     } finally {
       setLoading(false);
     }
@@ -126,17 +124,13 @@ const BudgetTracker = () => {
       const url = editingExpenseId ? `/api/expenses/${editingExpenseId}` : '/api/expenses';
       const method = editingExpenseId ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      await apiFetch(url, {
         method,
-        headers: getAuthHeaders(),
         body: JSON.stringify({
           ...expenseForm,
           tripId: selectedTripId
         })
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Operation failed');
 
       setSuccessMsg(editingExpenseId ? 'Expense updated!' : 'Expense added successfully!');
       setTimeout(() => setSuccessMsg(''), 3000);
@@ -176,12 +170,9 @@ const BudgetTracker = () => {
     if (!window.confirm('Delete this expense?')) return;
 
     try {
-      const res = await fetch(`/api/expenses/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
+      await apiFetch(`/api/expenses/${id}`, {
+        method: 'DELETE'
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to delete');
 
       setSuccessMsg('Expense removed');
       setTimeout(() => setSuccessMsg(''), 3000);
@@ -194,16 +185,13 @@ const BudgetTracker = () => {
   // Update Trip Budget
   const handleSaveBudget = async () => {
     try {
-      const res = await fetch(`/api/trips/${selectedTripId}`, {
+      await apiFetch(`/api/trips/${selectedTripId}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
         body: JSON.stringify({
           totalBudget: budgetForm.totalBudget,
           dailyBudget: budgetForm.dailyBudget
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to update budget');
 
       setSuccessMsg('Budget updated!');
       setTimeout(() => setSuccessMsg(''), 3000);

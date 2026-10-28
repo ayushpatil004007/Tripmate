@@ -13,6 +13,7 @@ import "./css/global.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { apiFetch } from "./utils/api";
 
 // Page Views
 import Home from "./pages/Home";
@@ -36,28 +37,15 @@ function App() {
       }
 
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "";
-        const res = await fetch(`${apiUrl}/api/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const contentType = res.headers.get("content-type") || "";
-        if (res.ok && contentType.includes("application/json")) {
-          const data = await res.json();
-          if (data.success && data.user) {
-            setUser(data.user);
-          } else {
-            localStorage.removeItem("tripmate_token");
-            setUser(null);
-          }
+        const data = await apiFetch("/api/auth/me");
+        if (data?.success && data?.user) {
+          setUser(data.user);
         } else {
           localStorage.removeItem("tripmate_token");
           setUser(null);
         }
       } catch (err) {
-        console.error("Auth verification error:", err);
+        console.error("Auth verification error:", err.message);
         localStorage.removeItem("tripmate_token");
         setUser(null);
       } finally {

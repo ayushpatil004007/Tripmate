@@ -36,17 +36,22 @@ function App() {
       }
 
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL || ""}/api/auth/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const apiUrl = import.meta.env.VITE_API_URL || "";
+        const res = await fetch(`${apiUrl}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
-        const data = await res.json();
-        if (data.success) {
-          setUser(data.user);
+        });
+
+        const contentType = res.headers.get("content-type") || "";
+        if (res.ok && contentType.includes("application/json")) {
+          const data = await res.json();
+          if (data.success && data.user) {
+            setUser(data.user);
+          } else {
+            localStorage.removeItem("tripmate_token");
+            setUser(null);
+          }
         } else {
           localStorage.removeItem("tripmate_token");
           setUser(null);

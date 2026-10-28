@@ -1,0 +1,25 @@
+{
+  "slug": "rome",
+  "name": "Rome",
+  "country": "Italy",
+  "state": "Lazio",
+  "coverImage": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1200&q=80",
+  "gallery": [
+    {
+      "url": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Colosseum standing proud under the warm Roman sunset"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1531572753322-ad063cecc140?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Trevi Fountain baroque marble sculptures and turquoise basin"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Vatican City St. Peter's Basilica dome and sweeping colonnade"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Roman Forum ancient temples and arches near Palatine Hill"
+    }
+  ]
+}

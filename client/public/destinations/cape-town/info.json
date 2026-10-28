@@ -1,0 +1,25 @@
+{
+  "slug": "cape-town",
+  "name": "Cape Town",
+  "country": "South Africa",
+  "state": "Western Cape",
+  "coverImage": "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1200&q=80",
+  "gallery": [
+    {
+      "url": "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Majestic Table Mountain backdrop across Table Bay"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=1200&q=80",
+      "caption": "African penguin colony basking on granite boulders at Boulders Beach"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Twelve Apostles peaks looming over Camps Bay golden beach"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1576485290814-1c72aa4bbb8e?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Cape of Good Hope rugged coastal promontory"
+    }
+  ]
+}

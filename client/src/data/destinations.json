@@ -1,0 +1,422 @@
+[
+  {
+    "name": "Santorini",
+    "slug": "santorini",
+    "country": "Greece",
+    "state": "South Aegean",
+    "categories": ["Romantic Island", "Scenic", "Beaches"],
+    "description": "Iconic whitewashed cubic houses clinging to tiered cliffs overlooking the cobalt Aegean Sea and volcanic calderas.",
+    "coverImage": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Caldera view with whitewashed cliffside villas in Oia"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Blue dome churches overlooking the Aegean Sea"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Dramatic sunset over the Aegean volcanic caldera"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Volcanic red sand beach and crystal waters"
+      }
+    ],
+    "bestVisitingTime": "April to November",
+    "estimatedBudget": 14500,
+    "currency": "INR",
+    "duration": "4-6 Days",
+    "highlights": [
+      "World-famous sunset in Oia",
+      "Scenic cliffside hike from Fira to Oia",
+      "Catamaran cruise around the volcanic caldera",
+      "Akrotiri prehistoric archaeological excavation"
+    ],
+    "coordinates": {
+      "lat": 36.3932,
+      "lng": 25.4615
+    },
+    "featured": true
+  },
+  {
+    "name": "Kyoto",
+    "slug": "kyoto",
+    "country": "Japan",
+    "state": "Kansai",
+    "categories": ["Culture & Heritage", "Historical", "Temples"],
+    "description": "Ancient imperial capital celebrated for thousands of classical Buddhist temples, gardens, imperial palaces, and traditional wooden houses.",
+    "coverImage": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Historic Yasaka Pagoda in Higashiyama district"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1478436127897-769e00d0c71e?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Fushimi Inari shrine with thousands of vermilion torii gates"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Arashiyama bamboo grove tranquil morning pathway"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Kinkaku-ji Golden Pavilion shimmering across the reflection pond"
+      }
+    ],
+    "bestVisitingTime": "March to May & October to November",
+    "estimatedBudget": 11000,
+    "currency": "INR",
+    "duration": "5-7 Days",
+    "highlights": [
+      "Fushimi Inari Taisha mountain trail",
+      "Arashiyama bamboo forest and monkey park",
+      "Kinkaku-ji (Golden Pavilion) reflection",
+      "Traditional Gion tea ceremony and geisha district"
+    ],
+    "coordinates": {
+      "lat": 35.0116,
+      "lng": 135.7681
+    },
+    "featured": true
+  },
+  {
+    "name": "Bali",
+    "slug": "bali",
+    "country": "Indonesia",
+    "state": "Bali Province",
+    "categories": ["Tropical Escape", "Adventure", "Beaches"],
+    "description": "An idyllic tropical paradise filled with forested volcanic mountains, iconic rice paddies, beaches, and coral reefs.",
+    "coverImage": "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Traditional Balinese temple gates framing Mount Agung"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Lush emerald Tegallalang tiered rice terraces in Ubud"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Uluwatu sea temple perched on towering ocean limestone cliffs"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1559628376-f3fe5f782a2e?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Turquoise waters and surf break at Nusa Penida coastal cliffs"
+      }
+    ],
+    "bestVisitingTime": "April to October",
+    "estimatedBudget": 5000,
+    "currency": "INR",
+    "duration": "6-8 Days",
+    "highlights": [
+      "Tegallalang rice terraces sunrise walk",
+      "Uluwatu sunset cliff temple and Kecak fire dance",
+      "Mount Batur sunrise volcano trek",
+      "Nusa Penida Kelingking beach exploration"
+    ],
+    "coordinates": {
+      "lat": -8.4095,
+      "lng": 115.1889
+    },
+    "featured": true
+  },
+  {
+    "name": "Swiss Alps",
+    "slug": "swiss-alps",
+    "country": "Switzerland",
+    "state": "Valais / Bernese Oberland",
+    "categories": ["Mountain Adventure", "Scenic", "Nature"],
+    "description": "Spectacular snow-capped alpine peaks, turquoise glacial lakes, scenic cogwheel trains, and charming mountain chalets.",
+    "coverImage": "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Iconic Matterhorn pyramid peak reflected in alpine Riffelsee lake"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Lauterbrunnen valley with seventy-two roaring waterfalls"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Panoramic mountain peaks above cloud layers at Jungfraujoch"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1527004013197-933c4bb611b3?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Glacier Express train crossing the Landwasser Viaduct"
+      }
+    ],
+    "bestVisitingTime": "December to April (Skiing) & June to September (Hiking)",
+    "estimatedBudget": 18000,
+    "currency": "INR",
+    "duration": "5-7 Days",
+    "highlights": [
+      "Jungfraujoch – Top of Europe cogwheel railway",
+      "Lauterbrunnen valley and Staubbach Falls",
+      "Matterhorn views from Gornergrat ridge",
+      "Scenic panoramic Glacier Express journey"
+    ],
+    "coordinates": {
+      "lat": 46.559,
+      "lng": 7.9077
+    },
+    "featured": false
+  },
+  {
+    "name": "Paris",
+    "slug": "paris",
+    "country": "France",
+    "state": "Île-de-France",
+    "categories": ["City & Art", "Romantic", "Culture & Heritage"],
+    "description": "The City of Light known for world-class art at the Louvre, the iconic Eiffel Tower, designer fashion, and charming street cafes.",
+    "coverImage": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Eiffel Tower illuminated against golden hour Parisian sky"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Pont Alexandre III bridge spanning the historic Seine River"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1520939817895-060bdef4d18f?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Louvre glass pyramid courtyard illuminated at twilight"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Charming Montmartre hillside cobbled street and Sacré-Cœur"
+      }
+    ],
+    "bestVisitingTime": "April to June & September to November",
+    "estimatedBudget": 15500,
+    "currency": "INR",
+    "duration": "4-6 Days",
+    "highlights": [
+      "Eiffel Tower summit and Champ de Mars picnic",
+      "Louvre Museum art treasures & Mona Lisa",
+      "Montmartre bohemian artist quarter and Sacré-Cœur",
+      "Sunset boat cruise down the River Seine"
+    ],
+    "coordinates": {
+      "lat": 48.8566,
+      "lng": 2.3522
+    },
+    "featured": true
+  },
+  {
+    "name": "Jaipur",
+    "slug": "jaipur",
+    "country": "India",
+    "state": "Rajasthan",
+    "categories": ["Royal Heritage", "Culture & Heritage", "Historical"],
+    "description": "The royal Pink City of Rajasthan showcasing majestic Amber Fort, intricately carved Hawa Mahal, and vibrant cultural bazaars.",
+    "coverImage": "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Hawa Mahal (Palace of Winds) pink sandstone honeycomb facade"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1603287681836-b174ce5074c2?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Amber Fort sprawling palaces overlooking Maota Lake"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Jal Mahal water palace resting in the center of Man Sagar Lake"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=1200&q=80",
+        "caption": "City Palace royal courtyards and intricate peacock gates"
+      }
+    ],
+    "bestVisitingTime": "October to March",
+    "estimatedBudget": 3500,
+    "currency": "INR",
+    "duration": "3-5 Days",
+    "highlights": [
+      "Amber Fort elephant path and Sheesh Mahal mirror palace",
+      "Hawa Mahal honeycomb window architecture",
+      "City Palace museum and royal courtyards",
+      "Shopping for gems, textiles and handicrafts in Johari Bazaar"
+    ],
+    "coordinates": {
+      "lat": 26.9124,
+      "lng": 75.7873
+    },
+    "featured": true
+  },
+  {
+    "name": "Rome",
+    "slug": "rome",
+    "country": "Italy",
+    "state": "Lazio",
+    "categories": ["Historical", "Culture & Heritage", "City & Art"],
+    "description": "A living open-air museum where nearly 3,000 years of globally influential art, architecture, and culture meet mouthwatering cuisine.",
+    "coverImage": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Colosseum standing proud under the warm Roman sunset"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1531572753322-ad063cecc140?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Trevi Fountain baroque marble sculptures and turquoise basin"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Vatican City St. Peter's Basilica dome and sweeping colonnade"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Roman Forum ancient temples and arches near Palatine Hill"
+      }
+    ],
+    "bestVisitingTime": "April to May & September to October",
+    "estimatedBudget": 12000,
+    "currency": "INR",
+    "duration": "4-6 Days",
+    "highlights": [
+      "Colosseum and Roman Forum archaeological guided tour",
+      "Vatican Museums and Michelangelo's Sistine Chapel ceiling",
+      "Coin toss tradition at Trevi Fountain",
+      "Authentic handmade pasta and gelato tasting in Trastevere"
+    ],
+    "coordinates": {
+      "lat": 41.9028,
+      "lng": 12.4964
+    },
+    "featured": false
+  },
+  {
+    "name": "Dubai",
+    "slug": "dubai",
+    "country": "United Arab Emirates",
+    "state": "Emirate of Dubai",
+    "categories": ["Modern Luxury", "Urban Explorer", "Shopping"],
+    "description": "Futuristic metropolis famous for ultramodern architecture, luxury shopping, desert safaris, and lively nightlife scenes.",
+    "coverImage": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Burj Khalifa soaring above the glittering Downtown Dubai skyline"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Golden desert sand dunes at sunset with Arabian safari 4x4s"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Dubai Marina skyscrapers lit up along the luxury yacht canal"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1580674285054-bed31e145f59?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Palm Jumeirah archipelago luxury resorts and calm Persian Gulf"
+      }
+    ],
+    "bestVisitingTime": "November to March",
+    "estimatedBudget": 16500,
+    "currency": "INR",
+    "duration": "4-6 Days",
+    "highlights": [
+      "Burj Khalifa observation deck at 148th floor",
+      "Evening desert safari with dune bashing and BBQ feast",
+      "Dubai Fountain choreographed music and light performance",
+      "Exploring traditional Gold and Spice Souks in Deira"
+    ],
+    "coordinates": {
+      "lat": 25.2048,
+      "lng": 55.2708
+    },
+    "featured": true
+  },
+  {
+    "name": "Cape Town",
+    "slug": "cape-town",
+    "country": "South Africa",
+    "state": "Western Cape",
+    "categories": ["Nature & Coast", "Adventure", "Scenic"],
+    "description": "A dramatic port city on South Africa’s southwest coast, flanked by majestic Table Mountain and panoramic ocean coastlines.",
+    "coverImage": "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Majestic Table Mountain backdrop across Table Bay"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=1200&q=80",
+        "caption": "African penguin colony basking on granite boulders at Boulders Beach"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Twelve Apostles peaks looming over Camps Bay golden beach"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1576485290814-1c72aa4bbb8e?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Cape of Good Hope rugged coastal promontory"
+      }
+    ],
+    "bestVisitingTime": "November to March",
+    "estimatedBudget": 7500,
+    "currency": "INR",
+    "duration": "5-7 Days",
+    "highlights": [
+      "Table Mountain aerial cableway ascent",
+      "Boulders Beach penguin colony boardwalk",
+      "Cape Point and Cape of Good Hope scenic drive",
+      "Wine tasting estates in Stellenbosch and Franschhoek"
+    ],
+    "coordinates": {
+      "lat": -33.9249,
+      "lng": 18.4241
+    },
+    "featured": false
+  },
+  {
+    "name": "New York City",
+    "slug": "new-york-city",
+    "country": "United States",
+    "state": "New York",
+    "categories": ["Urban Explorer", "City & Art", "Shopping"],
+    "description": "The city that never sleeps, featuring Times Square, lush Central Park, Broadway theatres, and sky-high observation decks.",
+    "coverImage": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1200&q=80",
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Midtown Manhattan skyscrapers and yellow cabs on Fifth Avenue"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1534430480872-3498386e7856?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Lush green oasis of Central Park nestled among Manhattan high-rises"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Brooklyn Bridge wooden promenade leading to Lower Manhattan skyline"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1518391846015-55a9cc003b25?auto=format&fit=crop&w=1200&q=80",
+        "caption": "Statue of Liberty standing tall in New York Harbor"
+      }
+    ],
+    "bestVisitingTime": "April to June & September to early November",
+    "estimatedBudget": 21000,
+    "currency": "INR",
+    "duration": "5-7 Days",
+    "highlights": [
+      "Central Park bike ride and Bow Bridge stroll",
+      "Summit One Vanderbilt / Top of the Rock skyline views",
+      "Walking across Brooklyn Bridge at sunset",
+      "Broadway musical performance in Times Square"
+    ],
+    "coordinates": {
+      "lat": 40.7128,
+      "lng": -74.006
+    },
+    "featured": true
+  }
+]

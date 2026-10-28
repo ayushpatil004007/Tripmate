@@ -13,6 +13,7 @@ import "./css/global.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { CountryProvider } from "./context/CountryContext";
 import { apiFetch } from "./utils/api";
 
 // Page Views
@@ -84,47 +85,49 @@ function App() {
 
   return (
     <Router>
-      <Navbar user={user} onLogout={handleLogout} />
-      <main>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home user={user} />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route
-            path="/auth"
-            element={<Auth user={user} onLoginSuccess={handleLoginSuccess} />}
-          />
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute user={user}>
-                <ExploreDashboard user={user} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/budget"
-            element={
-              <ProtectedRoute user={user}>
-                <BudgetTracker user={user} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/planner"
-            element={
-              <ProtectedRoute user={user}>
-                <DayPlanner user={user} />
-              </ProtectedRoute>
-            }
-          />
+      <CountryProvider user={user} onUpdateUser={setUser}>
+        <Navbar user={user} onLogout={handleLogout} />
+        <main>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home user={user} />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route
+              path="/auth"
+              element={<Auth user={user} onLoginSuccess={handleLoginSuccess} />}
+            />
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute user={user}>
+                  <ExploreDashboard user={user} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/budget"
+              element={
+                <ProtectedRoute user={user}>
+                  <BudgetTracker user={user} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/planner"
+              element={
+                <ProtectedRoute user={user}>
+                  <DayPlanner user={user} />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Catch-all Redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-      <Footer />
+            {/* Catch-all Redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+        <Footer />
+      </CountryProvider>
     </Router>
   );
 }

@@ -1,7 +1,8 @@
-// Authentication Page (Sign In & Sign Up)
+// Authentication Page (Sign In & Sign Up) with Required Home-Country Selection
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
+import { POPULAR_COUNTRIES, getCurrencyForCountry } from '../utils/currency';
 import '../css/auth.css';
 
 const Auth = ({ user, onLoginSuccess }) => {
@@ -15,7 +16,8 @@ const Auth = ({ user, onLoginSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    homeCountry: localStorage.getItem('tripmate_home_country') || 'India'
   });
 
   const [errorMsg, setErrorMsg] = useState('');
@@ -63,6 +65,11 @@ const Auth = ({ user, onLoginSuccess }) => {
       return;
     }
 
+    if (!isLogin && !formData.homeCountry) {
+      setErrorMsg('Please select your home country');
+      return;
+    }
+
     if (formData.password.length < 6) {
       setErrorMsg('Password must be at least 6 characters long');
       return;
@@ -72,9 +79,19 @@ const Auth = ({ user, onLoginSuccess }) => {
 
     try {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const payload = isLogin
+        ? { email: formData.email, password: formData.password }
+        : {
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            homeCountry: formData.homeCountry,
+            preferredCurrency: getCurrencyForCountry(formData.homeCountry)
+          };
+
       const data = await apiFetch(endpoint, {
         method: 'POST',
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (!data || !data.token || !data.user) {
@@ -83,6 +100,13 @@ const Auth = ({ user, onLoginSuccess }) => {
 
       // Persist auth token in storage and update application state
       localStorage.setItem('tripmate_token', data.token);
+      if (data.user.homeCountry) {
+        localStorage.setItem('tripmate_home_country', data.user.homeCountry);
+      }
+      if (data.user.preferredCurrency) {
+        localStorage.setItem('tripmate_display_currency', data.user.preferredCurrency);
+      }
+
       onLoginSuccess(data.user);
 
       // Navigate to main dashboard
@@ -101,7 +125,11 @@ const Auth = ({ user, onLoginSuccess }) => {
         <div className="auth-form-panel">
           <div className="auth-header">
             <h2>{isLogin ? 'Welcome Back!' : 'Start Your Adventure'}</h2>
-            <p>{isLogin ? 'Enter your credentials to access your trips' : 'Create an account to begin planning your dream journey'}</p>
+            <p>
+              {isLogin
+                ? 'Enter your credentials to access your trips'
+                : 'Create an account to begin planning your dream journey'}
+            </p>
           </div>
 
           {/* Mode Switch Tabs */}
@@ -134,19 +162,41 @@ const Auth = ({ user, onLoginSuccess }) => {
           {/* Form */}
           <form className="auth-form" onSubmit={handleSubmit}>
             {!isLogin && (
-              <div className="form-group">
-                <label className="form-label" htmlFor="name">Full Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="form-input"
-                  placeholder="e.g. John Doe"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required={!isLogin}
-                />
-              </div>
+              <>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="name">Full Name *</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    className="form-input"
+                    placeholder="e.g. John Doe"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required={!isLogin}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="homeCountry">
+                    Home Country * (Determines your default currency & domestic trips)
+                  </label>
+                  <select
+                    id="homeCountry"
+                    name="homeCountry"
+                    className="form-select"
+                    value={formData.homeCountry}
+                    onChange={handleInputChange}
+                    required={!isLogin}
+                  >
+                    {POPULAR_COUNTRIES.map((c) => (
+                      <option key={c.name} value={c.name}>
+                        {c.flag} {c.name} ({c.currency})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
             )}
 
             <div className="form-group">
@@ -210,9 +260,9 @@ const Auth = ({ user, onLoginSuccess }) => {
         <div className="auth-image-panel">
           <div className="auth-image-overlay-content">
             <span className="auth-image-tag">Wanderlust Awaits</span>
-            <h3>Explore over 10+ dream destinations around the globe.</h3>
+            <h3>Explore hand-curated dream destinations around the globe.</h3>
             <p>
-              Join thousands of travelers planning itineraries, tracking expenses, and making memories.
+              Join thousands of travelers planning itineraries, tracking multi-currency expenses, and making memories.
             </p>
           </div>
         </div>

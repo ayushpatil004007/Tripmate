@@ -18,6 +18,11 @@ const tripSchema = new mongoose.Schema(
       required: [true, 'Please provide a destination'],
       trim: true
     },
+    destinationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Destination',
+      default: null
+    },
     startDate: {
       type: Date,
       required: [true, 'Please provide a start date']
@@ -33,6 +38,12 @@ const tripSchema = new mongoose.Schema(
     dailyBudget: {
       type: Number,
       default: 0
+    },
+    currency: {
+      type: String,
+      default: 'INR',
+      uppercase: true,
+      trim: true
     },
     notes: {
       type: String,

@@ -1,18 +1,89 @@
 /* ====================================================================
-   Budget & Expense Tracker Styling
+   Budget & Expense Tracker Styling with Multi-Currency Integration
    ==================================================================== */
 
 .budget-page {
   padding: 3rem 0 5rem;
 }
 
+/* Currency Toolbar */
+.budget-currency-bar {
+  background: var(--bg-card);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.currency-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.currency-bar-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+}
+
+.currency-bar-select {
+  width: auto;
+  min-width: 170px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.currency-disclaimer-pill {
+  font-size: 0.75rem;
+  color: var(--slate);
+  background-color: var(--bg-subtle);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+}
+
+.currency-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Destination Budget Banner */
+.dest-budget-banner {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.dest-budget-highlight {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Trip Selector */
 .budget-trip-selector {
   background: var(--bg-card);
   padding: 1.5rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -83,6 +154,7 @@
   font-size: 1.85rem;
   font-weight: 800;
   color: var(--dark);
+  word-break: break-word;
 }
 
 .summary-card-sub {
@@ -150,12 +222,6 @@
   transition: width 0.6s ease;
 }
 
-/* Color codes for Categories */
-.fill-Food { background-color: #f97316; }
-.fill-Travel { background-color: #0284c7; }
-.fill-Hotels { background-color: #10b981; }
-.fill-Other { background-color: #8b5cf6; }
-
 /* Expenses Table / List Section */
 .expenses-card {
   background: var(--bg-card);
@@ -170,6 +236,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .expenses-table {
@@ -198,9 +266,166 @@
   background-color: var(--bg-page);
 }
 
+.expense-original-badge {
+  display: inline-block;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
 .expense-amount-cell {
   font-weight: 700;
   color: var(--dark);
+}
+
+/* ====================================================================
+   Currency Converter Dedicated Component Styling
+   ==================================================================== */
+.currency-converter-card {
+  background: var(--bg-card);
+  padding: 1.75rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.converter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.converter-subtext {
+  font-size: 0.875rem;
+  color: var(--slate);
+  margin-bottom: 1.25rem;
+}
+
+.converter-presets {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.preset-btn {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--slate);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.preset-btn:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary-light);
+}
+
+.preset-btn.active {
+  background-color: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.converter-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.converter-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.currency-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.currency-input-symbol {
+  position: absolute;
+  left: 0.85rem;
+  font-weight: 700;
+  color: var(--slate);
+  pointer-events: none;
+}
+
+.currency-input-wrapper .form-input {
+  padding-left: 2rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.converter-select {
+  font-size: 0.875rem;
+  padding: 0.45rem 0.75rem;
+}
+
+.converter-swap-col {
+  display: flex;
+  justify-content: center;
+  padding-top: 1.5rem;
+}
+
+.converter-swap-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.converter-result-box {
+  background-color: var(--bg-subtle);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.7rem 1rem;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.converter-result-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.converter-rate-badge {
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 1rem;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  color: var(--dark);
+}
+
+.converter-disclaimer {
+  background-color: #f8fafc;
+  border-left: 3px solid var(--primary);
+  padding: 0.6rem 0.85rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.8rem;
+  color: var(--slate);
 }
 
 /* Responsive */
@@ -208,10 +433,24 @@
   .budget-main-split {
     grid-template-columns: 1fr;
   }
+
+  .converter-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .converter-swap-col {
+    padding-top: 0;
+  }
 }
 
 @media (max-width: 640px) {
   .expenses-table-responsive {
     overflow-x: auto;
+  }
+
+  .budget-currency-bar {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

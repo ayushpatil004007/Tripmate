@@ -2,10 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
+import { useCountry } from '../context/CountryContext';
+import { formatDualCurrency, formatCurrency } from '../utils/currency';
+import DestinationDetailModal from '../components/DestinationDetailModal';
+import DestinationAdminModal from '../components/DestinationAdminModal';
 import '../css/dashboard.css';
 
 const ExploreDashboard = ({ user }) => {
   const navigate = useNavigate();
+  const { homeCountry, displayCurrency, preferredCurrency, isDomestic } = useCountry();
 
   // Tab & collection state
   const [activeTab, setActiveTab] = useState('trips'); // 'trips' or 'destinations'
@@ -15,8 +20,20 @@ const ExploreDashboard = ({ user }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Destination Filters State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCountry, setSelectedCountry] = useState('All');
+  const [classificationFilter, setClassificationFilter] = useState('all'); // 'all', 'domestic', 'international'
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+
+  // Modals State
+  const [selectedDestinationForDetails, setSelectedDestinationForDetails] = useState(null);
+  const [destinationToEdit, setDestinationToEdit] = useState(null);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+
   // Modal State for Create & Edit Trip
-  const [showModal, setShowModal] = useState(false);
+  const [showTripModal, setShowTripModal] = useState(false);
   const [editingTripId, setEditingTripId] = useState(null);
   const [tripForm, setTripForm] = useState({
     title: '',
@@ -25,18 +42,12 @@ const ExploreDashboard = ({ user }) => {
     endDate: '',
     totalBudget: '',
     dailyBudget: '',
+    currency: preferredCurrency || 'INR',
     notes: '',
     status: 'Planned'
   });
 
-  // Authorization headers with JWT token
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('tripmate_token');
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    };
-  };
+  const isAdmin = user?.role === 'admin';
 
   // Load initial destinations and trips on mount
   useEffect(() => {
@@ -81,11 +92,12 @@ const ExploreDashboard = ({ user }) => {
       endDate: '',
       totalBudget: '',
       dailyBudget: '',
+      currency: preferredCurrency || 'INR',
       notes: '',
       status: 'Planned'
     });
     setErrorMsg('');
-    setShowModal(true);
+    setShowTripModal(true);
   };
 
   // Open modal to edit an existing trip
@@ -98,15 +110,16 @@ const ExploreDashboard = ({ user }) => {
       endDate: trip.endDate ? trip.endDate.split('T')[0] : '',
       totalBudget: trip.totalBudget || '',
       dailyBudget: trip.dailyBudget || '',
+      currency: trip.currency || preferredCurrency || 'INR',
       notes: trip.notes || '',
       status: trip.status || 'Planned'
     });
     setErrorMsg('');
-    setShowModal(true);
+    setShowTripModal(true);
   };
 
-  // Handle form input changes
-  const handleInputChange = (e) => {
+  // Handle trip form input changes
+  const handleTripInputChange = (e) => {
     const { name, value } = e.target;
     setTripForm((prev) => ({
       ...prev,
@@ -135,7 +148,7 @@ const ExploreDashboard = ({ user }) => {
 
       setSuccessMsg(editingTripId ? 'Trip updated successfully!' : 'Trip created successfully!');
       setTimeout(() => setSuccessMsg(''), 3000);
-      setShowModal(false);
+      setShowTripModal(false);
       fetchUserTrips();
     } catch (err) {
       setErrorMsg(err.message);
@@ -161,17 +174,120 @@ const ExploreDashboard = ({ user }) => {
     }
   };
 
+  // Delete destination (Admin)
+  const handleDeleteDestination = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete destination "${name}"?`)) {
+      return;
+    }
+
+    try {
+      await apiFetch(`/api/destinations/${id}`, {
+        method: 'DELETE'
+      });
+      setSuccessMsg(`Destination "${name}" removed`);
+      setTimeout(() => setSuccessMsg(''), 3000);
+      fetchDestinations();
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  // Extract unique categories and countries for filter dropdowns
+  const allCategories = React.useMemo(() => {
+    const cats = new Set();
+    destinations.forEach((d) => {
+      if (Array.isArray(d.categories)) {
+        d.categories.forEach((c) => cats.add(c));
+      } else if (d.category) {
+        cats.add(d.category);
+      }
+    });
+    return ['All', ...Array.from(cats).sort()];
+  }, [destinations]);
+
+  const allCountries = React.useMemo(() => {
+    const countries = new Set();
+    destinations.forEach((d) => {
+      if (d.country) countries.add(d.country);
+    });
+    return ['All', ...Array.from(countries).sort()];
+  }, [destinations]);
+
+  // Client-side filtering
+  const filteredDestinations = React.useMemo(() => {
+    return destinations.filter((dest) => {
+      // Search query filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchName = dest.name?.toLowerCase().includes(q);
+        const matchCountry = dest.country?.toLowerCase().includes(q);
+        const matchState = dest.state?.toLowerCase().includes(q);
+        const matchDesc = dest.description?.toLowerCase().includes(q);
+        const matchHighlights = dest.highlights?.some((h) => h.toLowerCase().includes(q));
+        if (!matchName && !matchCountry && !matchState && !matchDesc && !matchHighlights) {
+          return false;
+        }
+      }
+
+      // Category filter
+      if (selectedCategory !== 'All') {
+        const destCats = Array.isArray(dest.categories) ? dest.categories : [dest.category];
+        if (!destCats.some((c) => c?.toLowerCase() === selectedCategory.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Country filter
+      if (selectedCountry !== 'All') {
+        if (dest.country?.toLowerCase() !== selectedCountry.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // Classification filter (Domestic vs International based on homeCountry)
+      if (classificationFilter !== 'all') {
+        const isDom = isDomestic(dest.country);
+        if (classificationFilter === 'domestic' && !isDom) return false;
+        if (classificationFilter === 'international' && isDom) return false;
+      }
+
+      // Featured filter
+      if (featuredOnly && !dest.featured) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [destinations, searchQuery, selectedCategory, selectedCountry, classificationFilter, featuredOnly, homeCountry]);
+
+  // Featured destinations for spotlight
+  const featuredList = destinations.filter((d) => d.featured);
+
   return (
     <div className="container dashboard-page">
       {/* Dashboard Top Header */}
       <div className="dashboard-header">
         <div>
           <h1>Trip Dashboard</h1>
-          <p>Welcome back, <strong>{user?.name}</strong>! Explore destinations and organize your journeys.</p>
+          <p>
+            Welcome back, <strong>{user?.name}</strong>! Home Country: <strong>{homeCountry}</strong> • Currency: <strong>{preferredCurrency}</strong>
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={() => handleOpenCreateModal('')}>
-          + Create New Trip
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button className="btn btn-primary" onClick={() => handleOpenCreateModal('')}>
+            + Create New Trip
+          </button>
+          <button
+            className="btn btn-outline"
+            onClick={() => {
+              setDestinationToEdit(null);
+              setShowAdminModal(true);
+            }}
+            title="Manage Destination Catalog or Import/Export JSON"
+          >
+            ⚙️ Destination Admin & JSON
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -214,78 +330,100 @@ const ExploreDashboard = ({ user }) => {
             </div>
           ) : (
             <div className="trips-grid">
-              {trips.map((trip) => (
-                <div key={trip._id} className="trip-card">
-                  <div className="trip-card-header">
-                    <div>
-                      <span className="destination-country">{trip.destination}</span>
-                      <h3 className="trip-destination-title">{trip.title}</h3>
-                    </div>
-                    <span className={`badge ${trip.status === 'Completed' ? 'badge-success' : trip.status === 'Ongoing' ? 'badge-warning' : 'badge-primary'}`}>
-                      {trip.status}
-                    </span>
-                  </div>
-
-                  <div className="trip-dates">
-                    <span>📅</span>
-                    <span>
-                      {new Date(trip.startDate).toLocaleDateString()} — {new Date(trip.endDate).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <div className="trip-stats">
-                    <div className="trip-stat-item">
-                      <span className="trip-stat-label">Total Budget</span>
-                      <span className="trip-stat-value">₹{trip.totalBudget?.toLocaleString('en-IN') || 0}</span>
-                    </div>
-                    <div className="trip-stat-item">
-                      <span className="trip-stat-label">Daily Target</span>
-                      <span className="trip-stat-value">₹{trip.dailyBudget?.toLocaleString('en-IN') || 0}</span>
-                    </div>
-                  </div>
-
-                  {trip.notes && (
-                    <p style={{ fontSize: '0.85rem', color: 'var(--slate)', marginBottom: '1.25rem', fontStyle: 'italic' }}>
-                      "{trip.notes}"
-                    </p>
-                  )}
-
-                  <div className="trip-actions">
-                    <div className="trip-nav-actions">
-                      <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => navigate(`/budget?tripId=${trip._id}`)}
-                        title="Manage Budget and Expenses"
+              {trips.map((trip) => {
+                const tripCurr = trip.currency || 'INR';
+                return (
+                  <div key={trip._id} className="trip-card">
+                    <div className="trip-card-header">
+                      <div>
+                        <span className="destination-country">{trip.destination}</span>
+                        <h3 className="trip-destination-title">{trip.title}</h3>
+                      </div>
+                      <span
+                        className={`badge ${
+                          trip.status === 'Completed'
+                            ? 'badge-success'
+                            : trip.status === 'Ongoing'
+                            ? 'badge-warning'
+                            : 'badge-primary'
+                        }`}
                       >
-                        💳 Budget
-                      </button>
-                      <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => navigate(`/planner?tripId=${trip._id}`)}
-                        title="Manage Day-wise Itinerary"
-                      >
-                        📅 Planner
-                      </button>
+                        {trip.status}
+                      </span>
                     </div>
-                    <div className="trip-manage-actions">
-                      <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => handleOpenEditModal(trip)}
-                        title="Edit Trip Details"
+
+                    <div className="trip-dates">
+                      <span>📅</span>
+                      <span>
+                        {new Date(trip.startDate).toLocaleDateString()} — {new Date(trip.endDate).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="trip-stats">
+                      <div className="trip-stat-item">
+                        <span className="trip-stat-label">Total Budget</span>
+                        <span className="trip-stat-value">
+                          {formatDualCurrency(trip.totalBudget || 0, tripCurr, displayCurrency)}
+                        </span>
+                      </div>
+                      <div className="trip-stat-item">
+                        <span className="trip-stat-label">Daily Target</span>
+                        <span className="trip-stat-value">
+                          {formatDualCurrency(trip.dailyBudget || 0, tripCurr, displayCurrency)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {trip.notes && (
+                      <p
+                        style={{
+                          fontSize: '0.85rem',
+                          color: 'var(--slate)',
+                          marginBottom: '1.25rem',
+                          fontStyle: 'italic'
+                        }}
                       >
-                        ✏️ Edit
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm trip-delete-btn"
-                        onClick={() => handleDeleteTrip(trip._id, trip.title)}
-                        title="Delete Trip"
-                      >
-                        🗑️
-                      </button>
+                        "{trip.notes}"
+                      </p>
+                    )}
+
+                    <div className="trip-actions">
+                      <div className="trip-nav-actions">
+                        <button
+                          className="btn btn-outline btn-sm"
+                          onClick={() => navigate(`/budget?tripId=${trip._id}`)}
+                          title="Manage Budget and Expenses"
+                        >
+                          💳 Budget
+                        </button>
+                        <button
+                          className="btn btn-outline btn-sm"
+                          onClick={() => navigate(`/planner?tripId=${trip._id}`)}
+                          title="Manage Day-wise Itinerary"
+                        >
+                          📅 Planner
+                        </button>
+                      </div>
+                      <div className="trip-manage-actions">
+                        <button
+                          className="btn btn-outline btn-sm"
+                          onClick={() => handleOpenEditModal(trip)}
+                          title="Edit Trip Details"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm trip-delete-btn"
+                          onClick={() => handleDeleteTrip(trip._id, trip.title)}
+                          title="Delete Trip"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -293,43 +431,327 @@ const ExploreDashboard = ({ user }) => {
 
       {/* TAB 2: EXPLORE DESTINATIONS */}
       {activeTab === 'destinations' && (
-        <div className="destinations-grid">
-          {destinations.map((dest) => (
-            <div key={dest._id} className="destination-card">
-              <div className="destination-img-wrapper">
-                <img src={dest.imageUrl} alt={dest.name} className="destination-img" />
-                <span className="badge destination-badge">{dest.category}</span>
+        <div>
+          {/* Featured Spotlight Banner */}
+          {featuredList.length > 0 && !searchQuery && selectedCategory === 'All' && selectedCountry === 'All' && classificationFilter === 'all' && (
+            <div className="featured-spotlight-section" style={{ marginBottom: '2.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                  <span>⭐</span> Featured World Highlights
+                </h3>
+                <span style={{ fontSize: '0.85rem', color: 'var(--slate)' }}>
+                  Hand-picked iconic travel experiences
+                </span>
               </div>
-              <div className="destination-body">
-                <span className="destination-country">{dest.country}</span>
-                <h3>{dest.name}</h3>
-                <p className="destination-desc">{dest.description}</p>
-                <div className="destination-footer">
-                  <span className="destination-cost">
-                    Avg: <strong>₹{dest.averageCostPerDay?.toLocaleString('en-IN')}/day</strong>
-                  </span>
-                  <button
-                    className="btn btn-accent btn-sm"
-                    onClick={() => {
-                      handleOpenCreateModal(dest.name);
-                    }}
-                  >
-                    Plan Trip →
-                  </button>
-                </div>
+              <div className="featured-scroll-container">
+                {featuredList.map((f) => {
+                  const fDomestic = isDomestic(f.country);
+                  return (
+                    <div
+                      key={f._id}
+                      className="featured-mini-card"
+                      onClick={() => setSelectedDestinationForDetails(f)}
+                    >
+                      <img
+                        src={f.coverImage || f.imageUrl}
+                        alt={f.name}
+                        className="featured-mini-img"
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800';
+                        }}
+                      />
+                      <div className="featured-mini-overlay">
+                        <span className={`badge ${fDomestic ? 'badge-success' : 'badge-primary'}`} style={{ fontSize: '0.7rem' }}>
+                          {fDomestic ? '🏠 Domestic' : '✈️ International'}
+                        </span>
+                        <h4>{f.name}</h4>
+                        <span>{f.country}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Search & Multi-Filters Toolbar */}
+          <div className="destinations-filter-toolbar">
+            <div className="filter-search-wrapper">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                className="form-input search-input"
+                placeholder="Search destinations, highlights, country..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button className="search-clear-btn" onClick={() => setSearchQuery('')}>
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Classification Filter: All / Domestic / International */}
+            <div className="classification-pills">
+              <button
+                type="button"
+                className={`pill-btn ${classificationFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setClassificationFilter('all')}
+              >
+                All Destinations
+              </button>
+              <button
+                type="button"
+                className={`pill-btn ${classificationFilter === 'domestic' ? 'active' : ''}`}
+                onClick={() => setClassificationFilter('domestic')}
+                title={`Destinations within ${homeCountry}`}
+              >
+                🏠 Domestic ({homeCountry})
+              </button>
+              <button
+                type="button"
+                className={`pill-btn ${classificationFilter === 'international' ? 'active' : ''}`}
+                onClick={() => setClassificationFilter('international')}
+                title={`Destinations outside ${homeCountry}`}
+              >
+                ✈️ International
+              </button>
+            </div>
+
+            {/* Dropdown Filters */}
+            <div className="filter-selects-group">
+              <div className="filter-select-wrapper">
+                <label className="filter-label">Category:</label>
+                <select
+                  className="form-select filter-select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  {allCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-select-wrapper">
+                <label className="filter-label">Country:</label>
+                <select
+                  className="form-select filter-select"
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                >
+                  {allCountries.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="featured-toggle-label">
+                <input
+                  type="checkbox"
+                  checked={featuredOnly}
+                  onChange={(e) => setFeaturedOnly(e.target.checked)}
+                />
+                ⭐ Featured Only
+              </label>
+            </div>
+          </div>
+
+          {/* Results Summary Bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', color: 'var(--slate)', fontSize: '0.9rem' }}>
+            <span>
+              Showing <strong>{filteredDestinations.length}</strong> of {destinations.length} destinations
+              {homeCountry && (
+                <span style={{ marginLeft: '0.5rem', color: 'var(--primary)' }}>
+                  (Relative to home country: {homeCountry})
+                </span>
+              )}
+            </span>
+            {(searchQuery || selectedCategory !== 'All' || selectedCountry !== 'All' || classificationFilter !== 'all' || featuredOnly) && (
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('All');
+                  setSelectedCountry('All');
+                  setClassificationFilter('all');
+                  setFeaturedOnly(false);
+                }}
+              >
+                Reset Filters
+              </button>
+            )}
+          </div>
+
+          {/* Destinations Grid */}
+          {filteredDestinations.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-icon">🔍</span>
+              <h3>No Destinations Found</h3>
+              <p>Try adjusting your search criteria, category, or country filters.</p>
+            </div>
+          ) : (
+            <div className="destinations-grid">
+              {filteredDestinations.map((dest) => {
+                const destDomestic = isDomestic(dest.country);
+                const destBudget = dest.estimatedBudget || dest.averageCostPerDay || 0;
+                const destCurrency = dest.currency || 'INR';
+
+                return (
+                  <div key={dest._id} className="destination-card">
+                    <div
+                      className="destination-img-wrapper"
+                      onClick={() => setSelectedDestinationForDetails(dest)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <img
+                        src={dest.coverImage || dest.imageUrl}
+                        alt={dest.name}
+                        className="destination-img"
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800';
+                        }}
+                      />
+
+                      {/* Top Badges */}
+                      <div className="destination-badges-strip">
+                        <span className={`badge ${destDomestic ? 'badge-success' : 'badge-primary'}`}>
+                          {destDomestic ? '🏠 Domestic' : '✈️ International'}
+                        </span>
+                        {dest.featured && <span className="badge badge-accent">⭐ Featured</span>}
+                      </div>
+
+                      <span className="badge destination-badge">
+                        {dest.categories && dest.categories.length > 0 ? dest.categories[0] : dest.category || 'Adventure'}
+                      </span>
+                    </div>
+
+                    <div className="destination-body">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="destination-country">{dest.country}</span>
+                        {dest.state && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--slate-light)' }}>
+                            {dest.state}
+                          </span>
+                        )}
+                      </div>
+
+                      <h3
+                        onClick={() => setSelectedDestinationForDetails(dest)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {dest.name}
+                      </h3>
+
+                      <p className="destination-desc">{dest.description}</p>
+
+                      {/* Highlights summary pills */}
+                      {dest.highlights && dest.highlights.length > 0 && (
+                        <div className="destination-mini-highlights">
+                          {dest.highlights.slice(0, 2).map((h, i) => (
+                            <span key={i} className="mini-highlight-tag">
+                              • {h}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="destination-footer">
+                        <div className="destination-cost">
+                          <span style={{ fontSize: '0.75rem', display: 'block', color: 'var(--slate)' }}>
+                            Est. Budget
+                          </span>
+                          <strong>
+                            {formatDualCurrency(destBudget, destCurrency, displayCurrency)}
+                          </strong>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--slate)' }}> / day</span>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            onClick={() => setSelectedDestinationForDetails(dest)}
+                            title="View Photo Gallery & Full Details"
+                          >
+                            Details
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-accent btn-sm"
+                            onClick={() => handleOpenCreateModal(dest.name)}
+                          >
+                            Plan Trip →
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Admin Quick Action Controls */}
+                      <div className="dest-admin-actions">
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm"
+                          style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
+                          onClick={() => {
+                            setDestinationToEdit(dest);
+                            setShowAdminModal(true);
+                          }}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
+                          onClick={() => handleDeleteDestination(dest._id, dest.name)}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* MODAL: CREATE OR EDIT TRIP */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+      {/* MODAL 1: DESTINATION FULL DETAILS & RESPONSIVE GALLERY */}
+      {selectedDestinationForDetails && (
+        <DestinationDetailModal
+          destination={selectedDestinationForDetails}
+          onClose={() => setSelectedDestinationForDetails(null)}
+          onPlanTrip={(name) => handleOpenCreateModal(name)}
+        />
+      )}
+
+      {/* MODAL 2: DESTINATION ADMIN & JSON IMPORT/EXPORT */}
+      {showAdminModal && (
+        <DestinationAdminModal
+          destinationToEdit={destinationToEdit}
+          onClose={() => {
+            setShowAdminModal(false);
+            setDestinationToEdit(null);
+          }}
+          onSuccess={() => {
+            fetchDestinations();
+          }}
+        />
+      )}
+
+      {/* MODAL 3: CREATE OR EDIT TRIP */}
+      {showTripModal && (
+        <div className="modal-overlay" onClick={() => setShowTripModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingTripId ? 'Edit Trip Details' : 'Create a New Trip'}</h3>
-              <button className="modal-close-btn" onClick={() => setShowModal(false)}>
+              <button className="modal-close-btn" onClick={() => setShowTripModal(false)}>
                 ✕
               </button>
             </div>
@@ -344,7 +766,7 @@ const ExploreDashboard = ({ user }) => {
                   className="form-input"
                   placeholder="e.g. Summer Vacation 2026"
                   value={tripForm.title}
-                  onChange={handleInputChange}
+                  onChange={handleTripInputChange}
                   required
                 />
               </div>
@@ -358,7 +780,7 @@ const ExploreDashboard = ({ user }) => {
                   className="form-input"
                   placeholder="e.g. Santorini, Kyoto, Bali..."
                   value={tripForm.destination}
-                  onChange={handleInputChange}
+                  onChange={handleTripInputChange}
                   required
                 />
               </div>
@@ -372,7 +794,7 @@ const ExploreDashboard = ({ user }) => {
                     name="startDate"
                     className="form-input"
                     value={tripForm.startDate}
-                    onChange={handleInputChange}
+                    onChange={handleTripInputChange}
                     required
                   />
                 </div>
@@ -384,15 +806,15 @@ const ExploreDashboard = ({ user }) => {
                     name="endDate"
                     className="form-input"
                     value={tripForm.endDate}
-                    onChange={handleInputChange}
+                    onChange={handleTripInputChange}
                     required
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="totalBudget">Total Budget (₹)</label>
+                  <label className="form-label" htmlFor="totalBudget">Total Budget</label>
                   <input
                     type="number"
                     id="totalBudget"
@@ -400,12 +822,12 @@ const ExploreDashboard = ({ user }) => {
                     className="form-input"
                     placeholder="e.g. 50000"
                     value={tripForm.totalBudget}
-                    onChange={handleInputChange}
+                    onChange={handleTripInputChange}
                     min="0"
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="dailyBudget">Daily Budget (₹)</label>
+                  <label className="form-label" htmlFor="dailyBudget">Daily Budget</label>
                   <input
                     type="number"
                     id="dailyBudget"
@@ -413,9 +835,32 @@ const ExploreDashboard = ({ user }) => {
                     className="form-input"
                     placeholder="e.g. 5000"
                     value={tripForm.dailyBudget}
-                    onChange={handleInputChange}
+                    onChange={handleTripInputChange}
                     min="0"
                   />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="tripCurrency">Budget Currency</label>
+                  <select
+                    id="tripCurrency"
+                    name="currency"
+                    className="form-select"
+                    value={tripForm.currency}
+                    onChange={handleTripInputChange}
+                  >
+                    <option value="INR">INR (₹)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="AED">AED</option>
+                    <option value="IDR">IDR (Rp)</option>
+                    <option value="JPY">JPY (¥)</option>
+                    <option value="AUD">AUD (A$)</option>
+                    <option value="CAD">CAD (C$)</option>
+                    <option value="SGD">SGD (S$)</option>
+                    <option value="CHF">CHF</option>
+                    <option value="ZAR">ZAR (R)</option>
+                  </select>
                 </div>
               </div>
 
@@ -427,7 +872,7 @@ const ExploreDashboard = ({ user }) => {
                     name="status"
                     className="form-select"
                     value={tripForm.status}
-                    onChange={handleInputChange}
+                    onChange={handleTripInputChange}
                   >
                     <option value="Planned">Planned</option>
                     <option value="Ongoing">Ongoing</option>
@@ -444,7 +889,7 @@ const ExploreDashboard = ({ user }) => {
                   className="form-textarea"
                   placeholder="Passport reminder, packing list, preferred airline..."
                   value={tripForm.notes}
-                  onChange={handleInputChange}
+                  onChange={handleTripInputChange}
                 />
               </div>
 
@@ -452,7 +897,7 @@ const ExploreDashboard = ({ user }) => {
                 <button
                   type="button"
                   className="btn btn-outline"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => setShowTripModal(false)}
                 >
                   Cancel
                 </button>

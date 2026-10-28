@@ -23,6 +23,13 @@ const expenseSchema = new mongoose.Schema(
       required: [true, 'Please provide expense amount'],
       min: [0, 'Amount must be a positive number']
     },
+    currency: {
+      type: String,
+      required: [true, 'Please provide currency'],
+      default: 'INR',
+      uppercase: true,
+      trim: true
+    },
     category: {
       type: String,
       required: [true, 'Please select a category'],

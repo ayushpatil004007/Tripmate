@@ -1,5 +1,6 @@
-// Donut Breakdown Chart Component (Pure SVG & CSS)
+// Donut Breakdown Chart Component (Pure SVG & CSS) with Dynamic Currency Formatting
 import React from 'react';
+import { formatCurrency } from '../utils/currency';
 
 const CATEGORY_COLORS = {
   Food: '#f97316',    // Coral / Orange
@@ -8,7 +9,7 @@ const CATEGORY_COLORS = {
   Other: '#8b5cf6'    // Purple
 };
 
-const ExpenseChart = ({ categoryTotals = {}, totalSpent = 0 }) => {
+const ExpenseChart = ({ categoryTotals = {}, totalSpent = 0, currency = 'INR' }) => {
   const categories = ['Food', 'Travel', 'Hotels', 'Other'];
 
   const radius = 70;
@@ -85,14 +86,16 @@ const ExpenseChart = ({ categoryTotals = {}, totalSpent = 0 }) => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            textAlign: 'center',
+            padding: '0 10px'
           }}
         >
           <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--slate)', textTransform: 'uppercase' }}>
             Total Spent
           </span>
-          <span style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--dark)' }}>
-            ₹{totalSpent.toLocaleString('en-IN')}
+          <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--dark)', wordBreak: 'break-all' }}>
+            {formatCurrency(totalSpent, currency)}
           </span>
         </div>
       </div>
@@ -114,7 +117,7 @@ const ExpenseChart = ({ categoryTotals = {}, totalSpent = 0 }) => {
                 {seg.category}
               </span>
               <span>
-                ₹{seg.amount.toLocaleString('en-IN')} ({seg.percentage}%)
+                {formatCurrency(seg.amount, currency)} ({seg.percentage}%)
               </span>
             </div>
             <div className="cat-bar-track">

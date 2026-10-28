@@ -1,28 +1,43 @@
-// Budget & Expense Tracker Page
-import React, { useState, useEffect } from 'react';
+// Budget & Expense Tracker Page with Full Multi-Currency Integration
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import ExpenseChart from '../components/ExpenseChart';
+import CurrencyConverter from '../components/CurrencyConverter';
 import { apiFetch } from '../utils/api';
+import { useCountry } from '../context/CountryContext';
+import {
+  convertCurrency,
+  formatCurrency,
+  formatDualCurrency,
+  SUPPORTED_CURRENCY_CODES,
+  CURRENCY_INFO,
+  RATES_DISCLAIMER
+} from '../utils/currency';
 import '../css/budget.css';
 
 const BudgetTracker = () => {
   const location = useLocation();
+  const { homeCountry, preferredCurrency, displayCurrency, setDisplayCurrency } = useCountry();
 
   // Trips and Active Trip State
   const [trips, setTrips] = useState([]);
   const [selectedTripId, setSelectedTripId] = useState('');
-  const [summaryData, setSummaryData] = useState(null);
   const [expenses, setExpenses] = useState([]);
+  const [destinations, setDestinations] = useState([]);
 
   // Loading and Alert states
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Quick Calculator Toggle
+  const [showConverterWidget, setShowConverterWidget] = useState(false);
+
   // Add / Edit Expense Form State
   const [expenseForm, setExpenseForm] = useState({
     title: '',
     amount: '',
+    currency: preferredCurrency || 'INR',
     category: 'Food',
     date: new Date().toISOString().split('T')[0],
     note: ''
@@ -31,33 +46,46 @@ const BudgetTracker = () => {
 
   // Quick Budget Editor State
   const [editingBudget, setEditingBudget] = useState(false);
-  const [budgetForm, setBudgetForm] = useState({ totalBudget: 0, dailyBudget: 0 });
+  const [budgetForm, setBudgetForm] = useState({
+    totalBudget: 0,
+    dailyBudget: 0,
+    currency: preferredCurrency || 'INR'
+  });
 
-  // Request headers with authentication token
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('tripmate_token');
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    };
-  };
-
-  // Initial Load - Fetch user's trips
+  // Keep form currency updated when preferred currency changes initially
   useEffect(() => {
-    const fetchTrips = async () => {
+    if (!editingExpenseId && preferredCurrency) {
+      setExpenseForm((prev) => ({
+        ...prev,
+        currency: prev.currency || preferredCurrency
+      }));
+    }
+  }, [preferredCurrency, editingExpenseId]);
+
+  // Initial Load - Fetch user's trips and destinations catalog
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const data = await apiFetch('/api/trips');
-        if (data?.success && data.data.length > 0) {
-          setTrips(data.data);
+        const [tripsRes, destsRes] = await Promise.all([
+          apiFetch('/api/trips'),
+          apiFetch('/api/destinations')
+        ]);
+
+        if (destsRes?.success) {
+          setDestinations(destsRes.data || []);
+        }
+
+        if (tripsRes?.success && tripsRes.data.length > 0) {
+          setTrips(tripsRes.data);
 
           // Check if URL specifies tripId query param
           const queryParams = new URLSearchParams(location.search);
           const paramTripId = queryParams.get('tripId');
 
-          if (paramTripId && data.data.some((t) => t._id === paramTripId)) {
+          if (paramTripId && tripsRes.data.some((t) => t._id === paramTripId)) {
             setSelectedTripId(paramTripId);
           } else {
-            setSelectedTripId(data.data[0]._id);
+            setSelectedTripId(tripsRes.data[0]._id);
           }
         }
       } catch (err) {
@@ -65,10 +93,10 @@ const BudgetTracker = () => {
       }
     };
 
-    fetchTrips();
+    fetchData();
   }, [location.search]);
 
-  // When selectedTripId changes, fetch summary and expenses
+  // When selectedTripId changes, fetch expenses
   useEffect(() => {
     if (selectedTripId) {
       loadTripData(selectedTripId);
@@ -79,20 +107,19 @@ const BudgetTracker = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      // Fetch budget summary
-      const sumData = await apiFetch(`/api/expenses/summary/${tripId}`);
-      if (sumData?.success) {
-        setSummaryData(sumData.data);
-        setBudgetForm({
-          totalBudget: sumData.data.totalBudget,
-          dailyBudget: sumData.data.dailyBudget
-        });
-      }
-
-      // Fetch expenses list
       const expData = await apiFetch(`/api/expenses?tripId=${tripId}`);
       if (expData?.success) {
         setExpenses(expData.data);
+      }
+
+      // Pre-fill budgetForm from trip
+      const currentTrip = trips.find((t) => t._id === tripId);
+      if (currentTrip) {
+        setBudgetForm({
+          totalBudget: currentTrip.totalBudget || 0,
+          dailyBudget: currentTrip.dailyBudget || 0,
+          currency: currentTrip.currency || 'INR'
+        });
       }
     } catch (err) {
       setErrorMsg(err.message || 'Failed to fetch expense details');
@@ -100,6 +127,76 @@ const BudgetTracker = () => {
       setLoading(false);
     }
   };
+
+  const activeTrip = useMemo(() => {
+    return trips.find((t) => t._id === selectedTripId) || null;
+  }, [trips, selectedTripId]);
+
+  // Find matching destination in catalog for budget comparison
+  const matchedDestination = useMemo(() => {
+    if (!activeTrip || !destinations.length) return null;
+    const destName = activeTrip.destination?.toLowerCase().trim();
+    return destinations.find(
+      (d) =>
+        d.name?.toLowerCase().trim() === destName ||
+        d.slug === destName ||
+        (d.country && destName.includes(d.country.toLowerCase()))
+    );
+  }, [activeTrip, destinations]);
+
+  // Multi-Currency Aggregations in Display Currency
+  // Converts every expense to the active displayCurrency before summing!
+  const { totalSpent, categoryTotals, totalBudget, dailyBudget, remainingBalance } = useMemo(() => {
+    const activeCurrency = displayCurrency || 'INR';
+
+    // 1. Convert trip target budgets from trip currency to displayCurrency
+    const tripCurr = (activeTrip?.currency || 'INR').toUpperCase();
+    const convertedTotalBudget = convertCurrency(activeTrip?.totalBudget || 0, tripCurr, activeCurrency);
+    const convertedDailyBudget = convertCurrency(activeTrip?.dailyBudget || 0, tripCurr, activeCurrency);
+
+    // 2. Sum converted expenses
+    let spentSum = 0;
+    const cats = { Food: 0, Travel: 0, Hotels: 0, Other: 0 };
+
+    expenses.forEach((item) => {
+      const itemCurr = (item.currency || 'INR').toUpperCase();
+      const convertedItemAmount = convertCurrency(item.amount, itemCurr, activeCurrency);
+      spentSum += convertedItemAmount;
+
+      if (cats[item.category] !== undefined) {
+        cats[item.category] += convertedItemAmount;
+      } else {
+        cats['Other'] += convertedItemAmount;
+      }
+    });
+
+    const remBalance = convertedTotalBudget - spentSum;
+
+    return {
+      totalSpent: spentSum,
+      categoryTotals: cats,
+      totalBudget: convertedTotalBudget,
+      dailyBudget: convertedDailyBudget,
+      remainingBalance: remBalance
+    };
+  }, [expenses, activeTrip, displayCurrency]);
+
+  // Destination Estimated Budget Converted to Display Currency
+  const destComparison = useMemo(() => {
+    if (!matchedDestination) return null;
+    const destEst = matchedDestination.estimatedBudget || matchedDestination.averageCostPerDay || 0;
+    const destCurr = matchedDestination.currency || 'INR';
+    const convertedDestBudget = convertCurrency(destEst, destCurr, displayCurrency);
+
+    return {
+      name: matchedDestination.name,
+      country: matchedDestination.country,
+      originalAmount: destEst,
+      originalCurrency: destCurr,
+      convertedAmount: convertedDestBudget,
+      diffDaily: dailyBudget - convertedDestBudget
+    };
+  }, [matchedDestination, displayCurrency, dailyBudget]);
 
   // Handle Expense Form Input changes
   const handleExpenseChange = (e) => {
@@ -128,17 +225,19 @@ const BudgetTracker = () => {
         method,
         body: JSON.stringify({
           ...expenseForm,
-          tripId: selectedTripId
+          tripId: selectedTripId,
+          currency: expenseForm.currency.toUpperCase()
         })
       });
 
-      setSuccessMsg(editingExpenseId ? 'Expense updated!' : 'Expense added successfully!');
+      setSuccessMsg(editingExpenseId ? 'Expense updated!' : 'Expense recorded successfully!');
       setTimeout(() => setSuccessMsg(''), 3000);
 
       // Reset form
       setExpenseForm({
         title: '',
         amount: '',
+        currency: activeTrip?.currency || preferredCurrency || 'INR',
         category: 'Food',
         date: new Date().toISOString().split('T')[0],
         note: ''
@@ -158,6 +257,7 @@ const BudgetTracker = () => {
     setExpenseForm({
       title: item.title,
       amount: item.amount,
+      currency: item.currency || 'INR',
       category: item.category,
       date: item.date ? item.date.split('T')[0] : '',
       note: item.note || ''
@@ -182,20 +282,36 @@ const BudgetTracker = () => {
     }
   };
 
-  // Update Trip Budget
+  // Update Trip Budget Target
   const handleSaveBudget = async () => {
     try {
       await apiFetch(`/api/trips/${selectedTripId}`, {
         method: 'PUT',
         body: JSON.stringify({
-          totalBudget: budgetForm.totalBudget,
-          dailyBudget: budgetForm.dailyBudget
+          totalBudget: Number(budgetForm.totalBudget),
+          dailyBudget: Number(budgetForm.dailyBudget),
+          currency: budgetForm.currency.toUpperCase()
         })
       });
 
       setSuccessMsg('Budget updated!');
       setTimeout(() => setSuccessMsg(''), 3000);
       setEditingBudget(false);
+
+      // Update local trips state
+      setTrips((prev) =>
+        prev.map((t) =>
+          t._id === selectedTripId
+            ? {
+                ...t,
+                totalBudget: Number(budgetForm.totalBudget),
+                dailyBudget: Number(budgetForm.dailyBudget),
+                currency: budgetForm.currency.toUpperCase()
+              }
+            : t
+        )
+      );
+
       loadTripData(selectedTripId);
     } catch (err) {
       setErrorMsg(err.message);
@@ -205,10 +321,57 @@ const BudgetTracker = () => {
   return (
     <div className="container budget-page">
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
         <h1>Budget & Expense Tracker</h1>
-        <p>Control your trip finances, visualize categorized spending with interactive breakdown charts, and stay within your budget.</p>
+        <p>
+          Multi-currency expense analytics. Log transactions in any currency, visualize converted spending, and compare against destination estimates.
+        </p>
       </div>
+
+      {/* Currency Switcher & Conversion Toolbar */}
+      <div className="budget-currency-bar">
+        <div className="currency-bar-left">
+          <label className="currency-bar-label" htmlFor="display-currency-select">
+            👁️ Viewing All Figures In:
+          </label>
+          <select
+            id="display-currency-select"
+            className="form-select currency-bar-select"
+            value={displayCurrency}
+            onChange={(e) => setDisplayCurrency(e.target.value)}
+          >
+            {SUPPORTED_CURRENCY_CODES.map((code) => {
+              const info = CURRENCY_INFO[code] || { name: code, flag: '' };
+              return (
+                <option key={code} value={code}>
+                  {info.flag} {code} ({info.symbol}) - {info.name}
+                </option>
+              );
+            })}
+          </select>
+          <span className="currency-disclaimer-pill" title={RATES_DISCLAIMER}>
+            ℹ️ Static Travel Rates
+          </span>
+        </div>
+
+        <div className="currency-bar-right">
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => setShowConverterWidget(!showConverterWidget)}
+            title="Toggle Quick Currency Calculator"
+          >
+            💱 {showConverterWidget ? 'Hide Converter' : 'Quick Converter'}
+          </button>
+        </div>
+      </div>
+
+      {/* Embedded Converter Widget if expanded */}
+      {showConverterWidget && (
+        <div style={{ marginBottom: '2rem' }}>
+          <CurrencyConverter onClose={() => setShowConverterWidget(false)} />
+        </div>
+      )}
 
       {/* Messages */}
       {successMsg && <div className="alert alert-success">{successMsg}</div>}
@@ -228,7 +391,7 @@ const BudgetTracker = () => {
             >
               {trips.map((t) => (
                 <option key={t._id} value={t._id}>
-                  {t.title} ({t.destination})
+                  {t.title} ({t.destination}) — Budget: {t.currency || 'INR'} {t.totalBudget?.toLocaleString()}
                 </option>
               ))}
             </select>
@@ -240,7 +403,16 @@ const BudgetTracker = () => {
         {selectedTripId && (
           <button
             className="btn btn-outline btn-sm"
-            onClick={() => setEditingBudget(!editingBudget)}
+            onClick={() => {
+              if (activeTrip) {
+                setBudgetForm({
+                  totalBudget: activeTrip.totalBudget || 0,
+                  dailyBudget: activeTrip.dailyBudget || 0,
+                  currency: activeTrip.currency || 'INR'
+                });
+              }
+              setEditingBudget(!editingBudget);
+            }}
           >
             {editingBudget ? 'Cancel Budget Edit' : '⚙️ Adjust Budget Target'}
           </button>
@@ -249,28 +421,57 @@ const BudgetTracker = () => {
 
       {/* Quick Budget Target Adjustment Modal/Drawer */}
       {editingBudget && (
-        <div className="card-budget" style={{ background: '#ffffff', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '2rem' }}>
+        <div
+          className="card-budget"
+          style={{
+            background: '#ffffff',
+            padding: '1.5rem',
+            borderRadius: '12px',
+            border: '1px solid var(--border)',
+            marginBottom: '2rem'
+          }}
+        >
           <h4 style={{ marginBottom: '1rem' }}>Set Budget Targets for Selected Trip</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '1rem'
+            }}
+          >
             <div className="form-group">
-              <label className="form-label">Total Budget (₹)</label>
+              <label className="form-label">Total Budget</label>
               <input
                 type="number"
                 className="form-input"
                 value={budgetForm.totalBudget}
-                onChange={(e) => setBudgetForm({ ...budgetForm, totalBudget: Number(e.target.value) })}
+                onChange={(e) => setBudgetForm({ ...budgetForm, totalBudget: e.target.value })}
                 min="0"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Daily Budget Target (₹)</label>
+              <label className="form-label">Daily Budget Target</label>
               <input
                 type="number"
                 className="form-input"
                 value={budgetForm.dailyBudget}
-                onChange={(e) => setBudgetForm({ ...budgetForm, dailyBudget: Number(e.target.value) })}
+                onChange={(e) => setBudgetForm({ ...budgetForm, dailyBudget: e.target.value })}
                 min="0"
               />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Budget Currency</label>
+              <select
+                className="form-select"
+                value={budgetForm.currency}
+                onChange={(e) => setBudgetForm({ ...budgetForm, currency: e.target.value })}
+              >
+                {SUPPORTED_CURRENCY_CODES.map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
@@ -284,20 +485,55 @@ const BudgetTracker = () => {
         </div>
       )}
 
+      {/* Destination Budget Comparison Banner */}
+      {destComparison && (
+        <div className="dest-budget-banner">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>📍</span>
+            <div>
+              <strong>Destination Estimate for {destComparison.name}:</strong> Average travel budget is{' '}
+              <span className="dest-budget-highlight">
+                {formatDualCurrency(
+                  destComparison.originalAmount,
+                  destComparison.originalCurrency,
+                  displayCurrency
+                )} / day
+              </span>
+              . Your planned daily target is{' '}
+              <strong>{formatCurrency(dailyBudget, displayCurrency)} / day</strong>.
+            </div>
+          </div>
+          <span
+            className={`badge ${destComparison.diffDaily >= 0 ? 'badge-success' : 'badge-warning'}`}
+            style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+          >
+            {destComparison.diffDaily >= 0
+              ? `Comfortable (+${formatCurrency(destComparison.diffDaily, displayCurrency)})`
+              : `Tight Budget (${formatCurrency(destComparison.diffDaily, displayCurrency)})`}
+          </span>
+        </div>
+      )}
+
       {selectedTripId ? (
         <>
-          {/* Summary Cards */}
+          {/* Summary Cards with Converted Figures */}
           <div className="summary-grid">
             <div className="summary-card card-budget">
               <span className="summary-card-label">Total Budget</span>
-              <span className="summary-card-value">₹{(summaryData?.totalBudget || 0).toLocaleString('en-IN')}</span>
-              <span className="summary-card-sub">Trip allocation</span>
+              <span className="summary-card-value">
+                {formatCurrency(totalBudget, displayCurrency)}
+              </span>
+              <span className="summary-card-sub">
+                Original: {activeTrip?.currency || 'INR'} {(activeTrip?.totalBudget || 0).toLocaleString()}
+              </span>
             </div>
 
             <div className="summary-card card-spent">
               <span className="summary-card-label">Total Spent</span>
-              <span className="summary-card-value">₹{(summaryData?.totalSpent || 0).toLocaleString('en-IN')}</span>
-              <span className="summary-card-sub">{summaryData?.expenseCount || 0} recorded expenses</span>
+              <span className="summary-card-value">
+                {formatCurrency(totalSpent, displayCurrency)}
+              </span>
+              <span className="summary-card-sub">{expenses.length} recorded expenses</span>
             </div>
 
             <div className="summary-card card-remaining">
@@ -305,19 +541,21 @@ const BudgetTracker = () => {
               <span
                 className="summary-card-value"
                 style={{
-                  color: (summaryData?.remainingBalance || 0) < 0 ? 'var(--danger)' : 'var(--success)'
+                  color: remainingBalance < 0 ? 'var(--danger)' : 'var(--success)'
                 }}
               >
-                ₹{(summaryData?.remainingBalance || 0).toLocaleString('en-IN')}
+                {formatCurrency(remainingBalance, displayCurrency)}
               </span>
               <span className="summary-card-sub">
-                {(summaryData?.remainingBalance || 0) < 0 ? '⚠️ Budget Exceeded' : 'Under budget'}
+                {remainingBalance < 0 ? '⚠️ Budget Exceeded' : 'Under budget'}
               </span>
             </div>
 
             <div className="summary-card card-daily">
               <span className="summary-card-label">Daily Target</span>
-              <span className="summary-card-value">₹{(summaryData?.dailyBudget || 0).toLocaleString('en-IN')}</span>
+              <span className="summary-card-value">
+                {formatCurrency(dailyBudget, displayCurrency)}
+              </span>
               <span className="summary-card-sub">Planned per day</span>
             </div>
           </div>
@@ -326,10 +564,14 @@ const BudgetTracker = () => {
           <div className="budget-main-split">
             {/* Left: Pure SVG & CSS Donut Chart */}
             <div className="chart-card">
-              <h3 style={{ marginBottom: '1.25rem' }}>Expense Breakdown</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h3 style={{ margin: 0 }}>Expense Breakdown</h3>
+                <span className="badge badge-primary">in {displayCurrency}</span>
+              </div>
               <ExpenseChart
-                categoryTotals={summaryData?.categoryTotals || {}}
-                totalSpent={summaryData?.totalSpent || 0}
+                categoryTotals={categoryTotals}
+                totalSpent={totalSpent}
+                currency={displayCurrency}
               />
             </div>
 
@@ -353,9 +595,9 @@ const BudgetTracker = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '0.75rem' }}>
                   <div className="form-group">
-                    <label className="form-label" htmlFor="expenseAmount">Amount (₹)</label>
+                    <label className="form-label" htmlFor="expenseAmount">Amount</label>
                     <input
                       type="number"
                       id="expenseAmount"
@@ -369,21 +611,42 @@ const BudgetTracker = () => {
                       required
                     />
                   </div>
+
                   <div className="form-group">
-                    <label className="form-label" htmlFor="expenseCategory">Category</label>
+                    <label className="form-label" htmlFor="expenseCurrency">Currency</label>
                     <select
-                      id="expenseCategory"
-                      name="category"
+                      id="expenseCurrency"
+                      name="currency"
                       className="form-select"
-                      value={expenseForm.category}
+                      value={expenseForm.currency}
                       onChange={handleExpenseChange}
                     >
-                      <option value="Food">Food & Dining</option>
-                      <option value="Travel">Travel & Transit</option>
-                      <option value="Hotels">Hotels & Stay</option>
-                      <option value="Other">Other / Shopping</option>
+                      {SUPPORTED_CURRENCY_CODES.map((code) => {
+                        const info = CURRENCY_INFO[code] || { name: code, flag: '' };
+                        return (
+                          <option key={code} value={code}>
+                            {info.flag} {code} ({info.symbol})
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="expenseCategory">Category</label>
+                  <select
+                    id="expenseCategory"
+                    name="category"
+                    className="form-select"
+                    value={expenseForm.category}
+                    onChange={handleExpenseChange}
+                  >
+                    <option value="Food">Food & Dining</option>
+                    <option value="Travel">Travel & Transit</option>
+                    <option value="Hotels">Hotels & Stay</option>
+                    <option value="Other">Other / Shopping</option>
+                  </select>
                 </div>
 
                 <div className="form-group">
@@ -425,6 +688,7 @@ const BudgetTracker = () => {
                         setExpenseForm({
                           title: '',
                           amount: '',
+                          currency: activeTrip?.currency || preferredCurrency || 'INR',
                           category: 'Food',
                           date: new Date().toISOString().split('T')[0],
                           note: ''
@@ -442,8 +706,13 @@ const BudgetTracker = () => {
           {/* Expenses History List Table */}
           <div className="expenses-card">
             <div className="expenses-header">
-              <h3>Recent Expenses ({expenses.length})</h3>
-              <span className="badge badge-primary">Trip: {summaryData?.tripTitle}</span>
+              <div>
+                <h3>Recent Expenses ({expenses.length})</h3>
+                <span style={{ fontSize: '0.85rem', color: 'var(--slate)' }}>
+                  Stored in original currency • Displayed in {displayCurrency}
+                </span>
+              </div>
+              <span className="badge badge-primary">Trip: {activeTrip?.title}</span>
             </div>
 
             {expenses.length === 0 ? (
@@ -459,43 +728,66 @@ const BudgetTracker = () => {
                       <th>Category</th>
                       <th>Date</th>
                       <th>Note</th>
-                      <th>Amount</th>
+                      <th>Original Amount</th>
+                      <th>In {displayCurrency}</th>
                       <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {expenses.map((item) => (
-                      <tr key={item._id}>
-                        <td style={{ fontWeight: 600 }}>{item.title}</td>
-                        <td>
-                          <span className={`badge badge-${item.category === 'Food' ? 'accent' : item.category === 'Travel' ? 'primary' : item.category === 'Hotels' ? 'success' : 'warning'}`}>
-                            {item.category}
-                          </span>
-                        </td>
-                        <td>{new Date(item.date).toLocaleDateString()}</td>
-                        <td style={{ color: 'var(--slate-light)', fontSize: '0.85rem' }}>
-                          {item.note || '—'}
-                        </td>
-                        <td className="expense-amount-cell">
-                          ₹{item.amount.toLocaleString('en-IN')}
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <button
-                            className="btn btn-outline btn-sm"
-                            style={{ marginRight: '0.4rem' }}
-                            onClick={() => handleStartEditExpense(item)}
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDeleteExpense(item._id)}
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {expenses.map((item) => {
+                      const itemCurr = item.currency || 'INR';
+                      const isSameAsDisplay = itemCurr === displayCurrency;
+
+                      return (
+                        <tr key={item._id}>
+                          <td style={{ fontWeight: 600 }}>{item.title}</td>
+                          <td>
+                            <span
+                              className={`badge badge-${
+                                item.category === 'Food'
+                                  ? 'accent'
+                                  : item.category === 'Travel'
+                                  ? 'primary'
+                                  : item.category === 'Hotels'
+                                  ? 'success'
+                                  : 'warning'
+                              }`}
+                            >
+                              {item.category}
+                            </span>
+                          </td>
+                          <td>{new Date(item.date).toLocaleDateString()}</td>
+                          <td style={{ color: 'var(--slate-light)', fontSize: '0.85rem' }}>
+                            {item.note || '—'}
+                          </td>
+                          <td>
+                            <span className="expense-original-badge">
+                              {formatCurrency(item.amount, itemCurr)}
+                            </span>
+                          </td>
+                          <td className="expense-amount-cell">
+                            {formatDualCurrency(item.amount, itemCurr, displayCurrency)}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              className="btn btn-outline btn-sm"
+                              style={{ marginRight: '0.4rem' }}
+                              onClick={() => handleStartEditExpense(item)}
+                              title="Edit Expense"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDeleteExpense(item._id)}
+                              title="Delete Expense"
+                            >
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

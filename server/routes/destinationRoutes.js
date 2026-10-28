@@ -18,7 +18,7 @@ const slugify = (text) => {
 
 // @route   GET /api/destinations/export/json
 // @desc    Export all destinations as structured JSON
-// @access  Private (Admin)
+// @access  Private (Admin Only)
 router.get('/export/json', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const destinations = await Destination.find().sort({ name: 1 });
@@ -56,7 +56,7 @@ router.get('/export/json', authMiddleware, adminMiddleware, async (req, res) => 
 
 // @route   POST /api/destinations/import/json
 // @desc    Import destinations array from JSON without duplicates or destructive drops
-// @access  Private (Admin)
+// @access  Private (Admin Only)
 router.post('/import/json', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const payload = req.body;
@@ -268,7 +268,7 @@ router.get('/:idOrSlug', async (req, res) => {
 
 // @route   POST /api/destinations
 // @desc    Create a new destination
-// @access  Private (Admin)
+// @access  Private (Admin Only)
 router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const {
@@ -341,7 +341,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 
 // @route   PUT /api/destinations/:id
 // @desc    Update an existing destination
-// @access  Private (Admin)
+// @access  Private (Admin Only)
 router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -393,9 +393,63 @@ router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// @route   PATCH /api/destinations/:id
+// @desc    Partially update an existing destination
+// @access  Private (Admin Only)
+router.patch('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let destination = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      destination = await Destination.findById(id);
+    }
+    if (!destination) {
+      destination = await Destination.findOne({ slug: id.toLowerCase() });
+    }
+
+    if (!destination) {
+      return res.status(404).json({ success: false, message: 'Destination not found' });
+    }
+
+    const updates = req.body;
+    if (updates.name !== undefined) destination.name = updates.name.trim();
+    if (updates.slug !== undefined) destination.slug = slugify(updates.slug);
+    if (updates.country !== undefined) destination.country = updates.country.trim();
+    if (updates.state !== undefined) destination.state = updates.state.trim();
+    if (updates.categories !== undefined) destination.categories = updates.categories;
+    if (updates.description !== undefined) destination.description = updates.description.trim();
+    if (updates.coverImage !== undefined) destination.coverImage = updates.coverImage.trim();
+    if (updates.imageUrl !== undefined) destination.coverImage = updates.imageUrl.trim();
+    if (updates.gallery !== undefined) destination.gallery = updates.gallery;
+    if (updates.bestVisitingTime !== undefined) destination.bestVisitingTime = updates.bestVisitingTime.trim();
+    if (updates.estimatedBudget !== undefined) destination.estimatedBudget = Number(updates.estimatedBudget);
+    if (updates.averageCostPerDay !== undefined) destination.estimatedBudget = Number(updates.averageCostPerDay);
+    if (updates.currency !== undefined) destination.currency = updates.currency.trim().toUpperCase();
+    if (updates.duration !== undefined) destination.duration = updates.duration.trim();
+    if (updates.highlights !== undefined) destination.highlights = updates.highlights;
+    if (updates.coordinates !== undefined) destination.coordinates = updates.coordinates;
+    if (updates.featured !== undefined) destination.featured = Boolean(updates.featured);
+
+    const saved = await destination.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Destination partially updated successfully',
+      data: saved
+    });
+  } catch (error) {
+    console.error('Error partially updating destination:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Destination with this slug already exists' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to partially update destination', error: error.message });
+  }
+});
+
 // @route   DELETE /api/destinations/:id
 // @desc    Delete a destination
-// @access  Private (Admin)
+// @access  Private (Admin Only)
 router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;

@@ -176,6 +176,10 @@ const ExploreDashboard = ({ user }) => {
 
   // Delete destination (Admin)
   const handleDeleteDestination = async (id, name) => {
+    if (!isAdmin) {
+      setErrorMsg('Admin privileges required to delete destinations.');
+      return;
+    }
     if (!window.confirm(`Are you sure you want to delete destination "${name}"?`)) {
       return;
     }
@@ -277,16 +281,18 @@ const ExploreDashboard = ({ user }) => {
           <button className="btn btn-primary" onClick={() => handleOpenCreateModal('')}>
             + Create New Trip
           </button>
-          <button
-            className="btn btn-outline"
-            onClick={() => {
-              setDestinationToEdit(null);
-              setShowAdminModal(true);
-            }}
-            title="Manage Destination Catalog or Import/Export JSON"
-          >
-            ⚙️ Destination Admin & JSON
-          </button>
+          {isAdmin && (
+            <button
+              className="btn btn-outline"
+              onClick={() => {
+                setDestinationToEdit(null);
+                setShowAdminModal(true);
+              }}
+              title="Manage Destination Catalog or Import/Export JSON"
+            >
+              ⚙️ Destination Admin & JSON
+            </button>
+          )}
         </div>
       </div>
 
@@ -692,27 +698,29 @@ const ExploreDashboard = ({ user }) => {
                       </div>
 
                       {/* Admin Quick Action Controls */}
-                      <div className="dest-admin-actions">
-                        <button
-                          type="button"
-                          className="btn btn-outline btn-sm"
-                          style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
-                          onClick={() => {
-                            setDestinationToEdit(dest);
-                            setShowAdminModal(true);
-                          }}
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
-                          onClick={() => handleDeleteDestination(dest._id, dest.name)}
-                        >
-                          🗑️ Delete
-                        </button>
-                      </div>
+                      {isAdmin && (
+                        <div className="dest-admin-actions">
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
+                            onClick={() => {
+                              setDestinationToEdit(dest);
+                              setShowAdminModal(true);
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
+                            onClick={() => handleDeleteDestination(dest._id, dest.name)}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -732,7 +740,7 @@ const ExploreDashboard = ({ user }) => {
       )}
 
       {/* MODAL 2: DESTINATION ADMIN & JSON IMPORT/EXPORT */}
-      {showAdminModal && (
+      {isAdmin && showAdminModal && (
         <DestinationAdminModal
           destinationToEdit={destinationToEdit}
           onClose={() => {

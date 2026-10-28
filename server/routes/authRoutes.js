@@ -35,7 +35,7 @@ router.post('/register', async (req, res) => {
   try {
     if (!checkDbConnection(res)) return;
 
-    const { name, email, password, homeCountry, preferredCurrency, role } = req.body || {};
+    const { name, email, password, homeCountry, preferredCurrency } = req.body || {};
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -59,8 +59,8 @@ router.post('/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Determine role (default: 'user')
-    const userRole = role === 'admin' ? 'admin' : 'user';
+    // Strictly enforce role as 'user' for public self-registration (prevent self-registration as admin)
+    const userRole = 'user';
 
     // Create and save user record
     const newUser = await User.create({
@@ -195,6 +195,8 @@ router.put('/preferences', authMiddleware, async (req, res) => {
     if (homeCountry) user.homeCountry = String(homeCountry).trim();
     if (preferredCurrency) user.preferredCurrency = String(preferredCurrency).trim().toUpperCase();
 
+    // Do NOT allow modification of role through preferences endpoint
+
     await user.save();
 
     res.status(200).json({
@@ -231,6 +233,8 @@ router.put('/profile', authMiddleware, async (req, res) => {
     if (name) user.name = String(name).trim();
     if (homeCountry) user.homeCountry = String(homeCountry).trim();
     if (preferredCurrency) user.preferredCurrency = String(preferredCurrency).trim().toUpperCase();
+
+    // Do NOT allow modification of role through profile update endpoint
 
     await user.save();
 

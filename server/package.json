@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node test_feature_suite.js && node test_routes_unit.js",
+    "test": "node test_security_suite.js && node test_feature_suite.js && node test_routes_unit.js",
+    "test:security": "node test_security_suite.js",
+    "test:features": "node test_feature_suite.js && node test_routes_unit.js",
     "test:e2e": "node test_auth_suite.js && node test_full_e2e.js",
     "migrate:destinations": "node scripts/migrateDestinations.js"
   },

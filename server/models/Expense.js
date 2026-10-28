@@ -33,7 +33,7 @@ const expenseSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, 'Please select a category'],
-      enum: ['Food', 'Travel', 'Hotels', 'Other'],
+      enum: ['Food', 'Transport', 'Accommodation', 'Activities', 'Shopping', 'Other', 'Travel', 'Hotels'],
       default: 'Other'
     },
     date: {
@@ -44,6 +44,11 @@ const expenseSchema = new mongoose.Schema(
       type: String,
       default: '',
       trim: true
+    },
+    itineraryItem: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ItineraryItem',
+      default: null
     }
   },
   {

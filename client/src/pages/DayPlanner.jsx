@@ -2,10 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
+import { useCountry } from '../context/CountryContext';
+import {
+  formatCurrency,
+  formatDualCurrency,
+  SUPPORTED_CURRENCY_CODES,
+  CURRENCY_INFO
+} from '../utils/currency';
 import '../css/planner.css';
 
 const DayPlanner = () => {
   const location = useLocation();
+  const { preferredCurrency, displayCurrency } = useCountry();
 
   // Trips and Active Trip State
   const [trips, setTrips] = useState([]);
@@ -24,11 +32,25 @@ const DayPlanner = () => {
     dayNumber: 1,
     placeName: '',
     activity: '',
-    time: '09:00 AM',
+    time: '',
     visitOrder: 1,
-    notes: ''
+    notes: '',
+    expenseAmount: '',
+    expenseCurrency: preferredCurrency || 'INR',
+    expenseCategory: 'Activities',
+    expenseDescription: ''
   });
   const [editingItemId, setEditingItemId] = useState(null);
+
+  // Sync form currency with preferredCurrency when not editing
+  useEffect(() => {
+    if (!editingItemId && preferredCurrency) {
+      setActivityForm((prev) => ({
+        ...prev,
+        expenseCurrency: prev.expenseCurrency || preferredCurrency
+      }));
+    }
+  }, [preferredCurrency, editingItemId]);
 
   // Request headers with authentication token
   const getAuthHeaders = () => {
@@ -111,8 +133,8 @@ const DayPlanner = () => {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!activityForm.placeName || !activityForm.activity) {
-      setErrorMsg('Place name and activity description are required');
+    if (!activityForm.placeName?.trim() || activityForm.dayNumber === undefined || activityForm.visitOrder === undefined || activityForm.visitOrder === '') {
+      setErrorMsg('Place / Location Name, Day Number, and Visit Order are required');
       return;
     }
 
@@ -121,10 +143,17 @@ const DayPlanner = () => {
       const method = editingItemId ? 'PUT' : 'POST';
 
       const payload = {
-        ...activityForm,
         tripId: selectedTripId,
         dayNumber: Number(activityForm.dayNumber),
-        visitOrder: Number(activityForm.visitOrder)
+        placeName: activityForm.placeName.trim(),
+        activity: activityForm.activity ? activityForm.activity.trim() : '',
+        time: activityForm.time ? activityForm.time.trim() : '',
+        visitOrder: Number(activityForm.visitOrder),
+        notes: activityForm.notes ? activityForm.notes.trim() : '',
+        expenseAmount: activityForm.expenseAmount !== '' ? Number(activityForm.expenseAmount) : 0,
+        expenseCurrency: activityForm.expenseCurrency,
+        expenseCategory: activityForm.expenseCategory,
+        expenseDescription: activityForm.expenseDescription ? activityForm.expenseDescription.trim() : ''
       };
 
       await apiFetch(url, {
@@ -140,9 +169,13 @@ const DayPlanner = () => {
         dayNumber: activeDay,
         placeName: '',
         activity: '',
-        time: '10:00 AM',
+        time: '',
         visitOrder: dayItems.length + (editingItemId ? 1 : 2),
-        notes: ''
+        notes: '',
+        expenseAmount: '',
+        expenseCurrency: preferredCurrency || 'INR',
+        expenseCategory: 'Activities',
+        expenseDescription: ''
       });
       setEditingItemId(null);
 
@@ -156,13 +189,18 @@ const DayPlanner = () => {
   // Start Editing Item
   const handleStartEdit = (item) => {
     setEditingItemId(item._id);
+    const itemExp = item.expense || null;
     setActivityForm({
       dayNumber: item.dayNumber,
-      placeName: item.placeName,
-      activity: item.activity,
-      time: item.time,
+      placeName: item.placeName || '',
+      activity: item.activity || '',
+      time: item.time || '',
       visitOrder: item.visitOrder,
-      notes: item.notes || ''
+      notes: item.notes || '',
+      expenseAmount: itemExp && itemExp.amount !== undefined ? itemExp.amount : '',
+      expenseCurrency: itemExp?.currency || preferredCurrency || 'INR',
+      expenseCategory: itemExp?.category || 'Activities',
+      expenseDescription: itemExp?.note || ''
     });
   };
 
@@ -291,11 +329,30 @@ const DayPlanner = () => {
                       <div className="timeline-content-box">
                         <div className="timeline-item-top">
                           <h4 className="timeline-place-name">{item.placeName}</h4>
-                          <span className="timeline-time-badge">
-                            ⏰ {item.time}
-                          </span>
+                          {item.time && (
+                            <span className="timeline-time-badge">
+                              ⏰ {item.time}
+                            </span>
+                          )}
                         </div>
-                        <p className="timeline-activity-desc">{item.activity}</p>
+                        {item.activity && (
+                          <p className="timeline-activity-desc">{item.activity}</p>
+                        )}
+                        {item.expense && Number(item.expense.amount) > 0 && (
+                          <div className="timeline-expense-tag">
+                            <span className="timeline-expense-amount">
+                              💳 {formatDualCurrency(item.expense.amount, item.expense.currency, displayCurrency)}
+                            </span>
+                            <span className="badge badge-accent" style={{ fontSize: '0.75rem', textTransform: 'capitalize' }}>
+                              {item.expense.category}
+                            </span>
+                            {item.expense.note && (
+                              <span className="timeline-expense-note">
+                                • {item.expense.note}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {item.notes && (
                           <div className="timeline-notes">
                             <strong>Note:</strong> {item.notes}
@@ -336,6 +393,7 @@ const DayPlanner = () => {
                     className="form-select"
                     value={activityForm.dayNumber}
                     onChange={handleInputChange}
+                    required
                   >
                     {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => (
                       <option key={d} value={d}>
@@ -360,7 +418,7 @@ const DayPlanner = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="activity">Activity Description</label>
+                  <label className="form-label" htmlFor="activity">Activity Description (Optional)</label>
                   <textarea
                     id="activity"
                     name="activity"
@@ -368,13 +426,12 @@ const DayPlanner = () => {
                     placeholder="e.g. Hike through the iconic thousand vermilion torii gates to the mountain summit."
                     value={activityForm.activity}
                     onChange={handleInputChange}
-                    required
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label" htmlFor="time">Scheduled Time</label>
+                    <label className="form-label" htmlFor="time">Scheduled Time (Optional)</label>
                     <input
                       type="text"
                       id="time"
@@ -396,12 +453,13 @@ const DayPlanner = () => {
                       value={activityForm.visitOrder}
                       onChange={handleInputChange}
                       min="1"
+                      required
                     />
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="notes">Special Notes</label>
+                  <label className="form-label" htmlFor="notes">Special Notes (Optional)</label>
                   <input
                     type="text"
                     id="notes"
@@ -411,6 +469,88 @@ const DayPlanner = () => {
                     value={activityForm.notes}
                     onChange={handleInputChange}
                   />
+                </div>
+
+                {/* Integrated Expense Section */}
+                <div className="planner-expense-section">
+                  <div className="planner-expense-header">
+                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--dark)' }}>
+                      💰 Activity Expense (Optional)
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--slate)' }}>
+                      Syncs with Budget Tracker
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" htmlFor="expenseAmount" style={{ fontSize: '0.8rem' }}>Expense Amount</label>
+                      <input
+                        type="number"
+                        id="expenseAmount"
+                        name="expenseAmount"
+                        className="form-input"
+                        placeholder="0.00"
+                        value={activityForm.expenseAmount}
+                        onChange={handleInputChange}
+                        min="0"
+                        step="any"
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" htmlFor="expenseCurrency" style={{ fontSize: '0.8rem' }}>Currency</label>
+                      <select
+                        id="expenseCurrency"
+                        name="expenseCurrency"
+                        className="form-select"
+                        value={activityForm.expenseCurrency}
+                        onChange={handleInputChange}
+                      >
+                        {SUPPORTED_CURRENCY_CODES.map((code) => {
+                          const info = CURRENCY_INFO[code] || { name: code, flag: '' };
+                          return (
+                            <option key={code} value={code}>
+                              {info.flag} {code} ({info.symbol})
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" htmlFor="expenseCategory" style={{ fontSize: '0.8rem' }}>Expense Category</label>
+                      <select
+                        id="expenseCategory"
+                        name="expenseCategory"
+                        className="form-select"
+                        value={activityForm.expenseCategory}
+                        onChange={handleInputChange}
+                      >
+                        <option value="Activities">Activities & Sightseeing</option>
+                        <option value="Food">Food & Dining</option>
+                        <option value="Transport">Transport & Transit</option>
+                        <option value="Accommodation">Accommodation & Stay</option>
+                        <option value="Shopping">Shopping & Souvenirs</option>
+                        <option value="Other">Other / Miscellaneous</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" htmlFor="expenseDescription" style={{ fontSize: '0.8rem' }}>Expense Description (Optional)</label>
+                      <input
+                        type="text"
+                        id="expenseDescription"
+                        name="expenseDescription"
+                        className="form-input"
+                        placeholder="e.g. Entry ticket, guided tour fee"
+                        value={activityForm.expenseDescription}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
@@ -427,9 +567,13 @@ const DayPlanner = () => {
                           dayNumber: activeDay,
                           placeName: '',
                           activity: '',
-                          time: '10:00 AM',
+                          time: '',
                           visitOrder: dayItems.length + 1,
-                          notes: ''
+                          notes: '',
+                          expenseAmount: '',
+                          expenseCurrency: preferredCurrency || 'INR',
+                          expenseCategory: 'Activities',
+                          expenseDescription: ''
                         });
                       }}
                     >

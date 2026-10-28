@@ -156,15 +156,26 @@ const BudgetTracker = () => {
 
     // 2. Sum converted expenses
     let spentSum = 0;
-    const cats = { Food: 0, Travel: 0, Hotels: 0, Other: 0 };
+    const cats = {
+      Food: 0,
+      Transport: 0,
+      Accommodation: 0,
+      Activities: 0,
+      Shopping: 0,
+      Other: 0
+    };
 
     expenses.forEach((item) => {
       const itemCurr = (item.currency || 'INR').toUpperCase();
       const convertedItemAmount = convertCurrency(item.amount, itemCurr, activeCurrency);
       spentSum += convertedItemAmount;
 
-      if (cats[item.category] !== undefined) {
-        cats[item.category] += convertedItemAmount;
+      let cat = item.category;
+      if (cat === 'Travel') cat = 'Transport';
+      else if (cat === 'Hotels') cat = 'Accommodation';
+
+      if (cats[cat] !== undefined) {
+        cats[cat] += convertedItemAmount;
       } else {
         cats['Other'] += convertedItemAmount;
       }
@@ -643,9 +654,11 @@ const BudgetTracker = () => {
                     onChange={handleExpenseChange}
                   >
                     <option value="Food">Food & Dining</option>
-                    <option value="Travel">Travel & Transit</option>
-                    <option value="Hotels">Hotels & Stay</option>
-                    <option value="Other">Other / Shopping</option>
+                    <option value="Transport">Transport & Transit</option>
+                    <option value="Accommodation">Accommodation & Stay</option>
+                    <option value="Activities">Activities & Sightseeing</option>
+                    <option value="Shopping">Shopping & Souvenirs</option>
+                    <option value="Other">Other / Miscellaneous</option>
                   </select>
                 </div>
 
@@ -746,10 +759,14 @@ const BudgetTracker = () => {
                               className={`badge badge-${
                                 item.category === 'Food'
                                   ? 'accent'
-                                  : item.category === 'Travel'
+                                  : item.category === 'Transport' || item.category === 'Travel'
                                   ? 'primary'
-                                  : item.category === 'Hotels'
+                                  : item.category === 'Accommodation' || item.category === 'Hotels'
                                   ? 'success'
+                                  : item.category === 'Activities'
+                                  ? 'primary'
+                                  : item.category === 'Shopping'
+                                  ? 'warning'
                                   : 'warning'
                               }`}
                             >

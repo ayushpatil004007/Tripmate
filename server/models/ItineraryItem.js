@@ -25,22 +25,29 @@ const itineraryItemSchema = new mongoose.Schema(
     },
     activity: {
       type: String,
-      required: [true, 'Please describe the activity'],
+      default: '',
       trim: true
     },
     time: {
       type: String,
-      default: '09:00 AM',
+      default: '',
       trim: true
     },
     visitOrder: {
       type: Number,
-      default: 1
+      required: [true, 'Please specify the visit order'],
+      default: 1,
+      min: 1
     },
     notes: {
       type: String,
       default: '',
       trim: true
+    },
+    expense: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Expense',
+      default: null
     }
   },
   {

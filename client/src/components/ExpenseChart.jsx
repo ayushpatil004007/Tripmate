@@ -3,14 +3,18 @@ import React from 'react';
 import { formatCurrency } from '../utils/currency';
 
 const CATEGORY_COLORS = {
-  Food: '#f97316',    // Coral / Orange
-  Travel: '#0284c7',  // Ocean Teal
-  Hotels: '#10b981',  // Emerald Green
-  Other: '#8b5cf6'    // Purple
+  Food: '#f97316',          // Coral / Orange
+  Transport: '#0284c7',     // Ocean Teal
+  Accommodation: '#10b981', // Emerald Green
+  Activities: '#ec4899',    // Pink / Rose
+  Shopping: '#eab308',      // Amber / Yellow
+  Other: '#8b5cf6',         // Purple
+  Travel: '#0284c7',        // Legacy alias
+  Hotels: '#10b981'         // Legacy alias
 };
 
 const ExpenseChart = ({ categoryTotals = {}, totalSpent = 0, currency = 'INR' }) => {
-  const categories = ['Food', 'Travel', 'Hotels', 'Other'];
+  const categories = ['Food', 'Transport', 'Accommodation', 'Activities', 'Shopping', 'Other'];
 
   const radius = 70;
   const circumference = 2 * Math.PI * radius; // 2 * PI * r ~= 439.82

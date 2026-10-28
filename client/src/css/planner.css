@@ -190,6 +190,50 @@
   justify-content: flex-end;
 }
 
+/* Timeline Activity Expense Tag */
+.timeline-expense-tag {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.timeline-expense-amount {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.timeline-expense-note {
+  color: var(--slate);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* Planner Expense Form Section */
+.planner-expense-section {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.15rem;
+  margin-bottom: 1.25rem;
+}
+
+.planner-expense-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
 /* Planner Form Card */
 .planner-form-card {
   background: var(--bg-card);

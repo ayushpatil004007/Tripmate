@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const Expense = require('../models/Expense');
 const Trip = require('../models/Trip');
+const ItineraryItem = require('../models/ItineraryItem');
 const authMiddleware = require('../middleware/authMiddleware');
 const exchangeRatesData = require('../data/exchangeRates.json');
 
@@ -86,16 +87,37 @@ router.get('/summary/:tripId', async (req, res) => {
 
     // Sum all expenses converted to active display currency
     let totalSpent = 0;
-    const categories = ['Food', 'Travel', 'Hotels', 'Other'];
-    const categoryTotals = { Food: 0, Travel: 0, Hotels: 0, Other: 0 };
+    const categoryTotals = {
+      Food: 0,
+      Transport: 0,
+      Accommodation: 0,
+      Activities: 0,
+      Shopping: 0,
+      Other: 0,
+      Travel: 0,
+      Hotels: 0
+    };
 
     for (const exp of expenses) {
       const expCurrency = (exp.currency || 'INR').toUpperCase();
       const converted = convertAmount(exp.amount, expCurrency, activeCurrency);
       totalSpent += converted;
 
-      if (categoryTotals[exp.category] !== undefined) {
-        categoryTotals[exp.category] += converted;
+      const cat = exp.category;
+      if (cat === 'Travel') {
+        categoryTotals.Travel += converted;
+        categoryTotals.Transport += converted;
+      } else if (cat === 'Transport') {
+        categoryTotals.Transport += converted;
+        categoryTotals.Travel += converted;
+      } else if (cat === 'Hotels') {
+        categoryTotals.Hotels += converted;
+        categoryTotals.Accommodation += converted;
+      } else if (cat === 'Accommodation') {
+        categoryTotals.Accommodation += converted;
+        categoryTotals.Hotels += converted;
+      } else if (categoryTotals[cat] !== undefined) {
+        categoryTotals[cat] += converted;
       } else {
         categoryTotals['Other'] += converted;
       }
@@ -130,7 +152,7 @@ router.get('/summary/:tripId', async (req, res) => {
 // @access  Private
 router.post('/', async (req, res) => {
   try {
-    const { tripId, title, amount, currency, category, date, note } = req.body;
+    const { tripId, title, amount, currency, category, date, note, itineraryItemId } = req.body;
 
     if (!tripId || !title || amount === undefined || !category) {
       return res.status(400).json({
@@ -154,8 +176,16 @@ router.post('/', async (req, res) => {
       currency: expenseCurrency,
       category,
       date: date || new Date(),
-      note: note ? String(note).trim() : ''
+      note: note ? String(note).trim() : '',
+      itineraryItem: itineraryItemId || null
     });
+
+    if (itineraryItemId) {
+      await ItineraryItem.updateOne(
+        { _id: itineraryItemId, user: req.user.id },
+        { expense: expense._id }
+      );
+    }
 
     res.status(201).json({
       success: true,
@@ -207,6 +237,17 @@ router.delete('/:id', async (req, res) => {
     if (!expense) {
       return res.status(404).json({ success: false, message: 'Expense not found or unauthorized' });
     }
+
+    if (expense.itineraryItem) {
+      await ItineraryItem.updateOne(
+        { _id: expense.itineraryItem, user: req.user.id },
+        { expense: null }
+      );
+    }
+    await ItineraryItem.updateMany(
+      { expense: expense._id, user: req.user.id },
+      { expense: null }
+    );
 
     await Expense.deleteOne({ _id: expense._id });
 

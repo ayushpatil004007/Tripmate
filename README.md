@@ -198,8 +198,9 @@ Access the application at `http://localhost:3000`.
 2. Root Directory: leave as `./` (or `client`).
 3. Build Command: `npm --prefix client run build` (configured in `vercel.json`).
 4. Output Directory: `client/dist`.
-5. Environment Variable:
+5. Environment Variable (Optional but recommended):
    - `VITE_API_URL`: Your deployed Render backend URL (e.g. `https://tripmate-api-sjni.onrender.com`).
+   - *Note:* `vercel.json` includes an automatic reverse-proxy rewrite for `/api/:path*` to the Render backend, preventing 405 Method Not Allowed errors when requests hit Vercel directly.
 
 ### Render (Backend Deployment)
 1. Create a Web Service connected to your repository.

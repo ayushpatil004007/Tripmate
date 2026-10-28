@@ -120,6 +120,8 @@ export const apiFetch = async (path, options = {}) => {
     const fallbackMsg =
       res.status === 404
         ? `API endpoint not found (404): ${path}. Verify backend route configuration.`
+        : res.status === 405
+        ? `Request method not allowed (405) for ${path}. Ensure Vercel rewrites or VITE_API_URL are properly configured.`
         : res.status === 502 || res.status === 504
         ? 'Backend gateway timeout. The server instance may be waking up from idle on Render. Please retry in a moment.'
         : res.status === 503

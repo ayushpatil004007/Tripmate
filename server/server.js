@@ -20,7 +20,7 @@ const seedDestinations = require('./data/seedDestinations');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/tripmate';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/tripmate';
 
 // Global Middleware
 app.use(cors());
@@ -31,7 +31,6 @@ mongoose
   .connect(MONGO_URI)
   .then(async () => {
     console.log('MongoDB connected');
-    console.log(`Database URL: ${MONGO_URI}`);
 
     // Auto-seed destination catalog if database is fresh
     try {
@@ -55,12 +54,13 @@ app.use('/api/trips', tripRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/itinerary', itineraryRoutes);
 
-// Health check endpoint
+// Health check endpoint (does not expose raw credentials)
 app.get('/api/health', (req, res) => {
+  const isConnected = mongoose.connection.readyState === 1;
   res.status(200).json({
-    status: 'OK',
+    status: isConnected ? 'OK' : 'DEGRADED',
     app: 'TripMate Backend API',
-    mongoUri: MONGO_URI,
+    database: isConnected ? 'connected' : 'disconnected',
     timestamp: new Date()
   });
 });
@@ -70,8 +70,36 @@ app.get('/', (req, res) => {
   res.send('TripMate REST API Server is running. Access API endpoints under /api/*');
 });
 
-// Start the Express Server
-app.listen(PORT, () => {
-  console.log(`TripMate server is listening on port ${PORT}`);
-  console.log(`API Health: http://localhost:${PORT}/api/health`);
+// Fallback 404 handler for unknown API routes - ensures JSON response instead of HTML
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API route not found: ${req.method} ${req.originalUrl}`
+  });
 });
+
+// Global error handling middleware - ensures all server errors return JSON
+app.use((err, req, res, next) => {
+  console.error('Unhandled server error:', err);
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      success: false,
+      message: 'Malformed JSON payload in request'
+    });
+  }
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal server error'
+  });
+});
+
+// Start the Express Server
+let server;
+if (require.main === module) {
+  server = app.listen(PORT, () => {
+    console.log(`TripMate server is listening on port ${PORT}`);
+    console.log(`API Health: http://localhost:${PORT}/api/health`);
+  });
+}
+
+module.exports = { app, server };

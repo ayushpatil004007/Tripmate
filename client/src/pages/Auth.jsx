@@ -70,20 +70,50 @@ const Auth = ({ user, onLoginSuccess }) => {
     setLoading(true);
 
     try {
-      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const endpoint = `${apiUrl}${isLogin ? '/api/auth/login' : '/api/auth/register'}`;
 
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
+      let res;
+      try {
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+      } catch (networkErr) {
+        throw new Error(
+          'Unable to connect to the authentication server. Please check your network connection or verify that the server is running.'
+        );
+      }
 
-      const data = await res.json();
+      // Safely parse JSON or handle non-JSON (HTML/error) responses
+      let data = null;
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        try {
+          data = await res.json();
+        } catch (jsonErr) {
+          data = null;
+        }
+      }
 
       if (!res.ok) {
-        throw new Error(data.message || 'Authentication failed');
+        const fallbackMsg =
+          res.status === 404
+            ? 'Authentication endpoint not found (404). Please check the server route configuration.'
+            : res.status === 503
+            ? 'Database service is currently unavailable. Please verify MongoDB is running.'
+            : res.status === 500
+            ? 'Internal server error. Please try again later.'
+            : `Authentication failed (Status ${res.status})`;
+
+        throw new Error(data?.message || fallbackMsg);
+      }
+
+      if (!data || !data.token || !data.user) {
+        throw new Error('Invalid response received from authentication server.');
       }
 
       // Persist auth token in storage and update application state

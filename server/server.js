@@ -23,8 +23,21 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/tripmate';
 
 // Global Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+);
 app.use(express.json()); // Parse incoming JSON request bodies
+
+// Check for JWT_SECRET in production
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.warn(
+    '⚠️ [SECURITY WARNING] JWT_SECRET environment variable is not defined in production. Using fallback secret. Please configure JWT_SECRET in your Render dashboard.'
+  );
+}
 
 // Database Connection via Mongoose
 mongoose
@@ -47,15 +60,26 @@ mongoose
     console.error('MongoDB connection error:', err.message);
   });
 
+// Database connectivity verification middleware for data routes
+const checkDbConnection = (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database service is currently unavailable. Please verify MongoDB is running and MONGO_URI is configured.'
+    });
+  }
+  next();
+};
+
 // REST API Route Registrations
 app.use('/api/auth', authRoutes);
-app.use('/api/destinations', destinationRoutes);
-app.use('/api/trips', tripRoutes);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/itinerary', itineraryRoutes);
+app.use('/api/destinations', checkDbConnection, destinationRoutes);
+app.use('/api/trips', checkDbConnection, tripRoutes);
+app.use('/api/expenses', checkDbConnection, expenseRoutes);
+app.use('/api/itinerary', checkDbConnection, itineraryRoutes);
 
-// Health check endpoint (does not expose raw credentials)
-app.get('/api/health', (req, res) => {
+// Health check endpoints (supported on both /api/health and /health for Render checks)
+const healthCheckHandler = (req, res) => {
   const isConnected = mongoose.connection.readyState === 1;
   res.status(200).json({
     status: isConnected ? 'OK' : 'DEGRADED',
@@ -63,15 +87,17 @@ app.get('/api/health', (req, res) => {
     database: isConnected ? 'connected' : 'disconnected',
     timestamp: new Date()
   });
-});
+};
+app.get('/api/health', healthCheckHandler);
+app.get('/health', healthCheckHandler);
 
 // Root welcome endpoint
 app.get('/', (req, res) => {
   res.send('TripMate REST API Server is running. Access API endpoints under /api/*');
 });
 
-// Fallback 404 handler for unknown API routes - ensures JSON response instead of HTML
-app.use('/api', (req, res) => {
+// Fallback 404 handler for any unmatched route - guarantees 100% JSON response, never HTML
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `API route not found: ${req.method} ${req.originalUrl}`

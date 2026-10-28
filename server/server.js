@@ -14,9 +14,9 @@ const tripRoutes = require('./routes/tripRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const itineraryRoutes = require('./routes/itineraryRoutes');
 
-// Import Model & Seed Data for Auto-Seeding
+// Import Destination Model and Master JSON Data
 const Destination = require('./models/Destination');
-const seedDestinations = require('./data/seedDestinations');
+const destinationsData = require('./data/destinations.json');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,10 +27,10 @@ app.use(
   cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key']
   })
 );
-app.use(express.json()); // Parse incoming JSON request bodies
+app.use(express.json({ limit: '10mb' })); // Parse incoming JSON request bodies with ample limit for JSON import/export
 
 // Check for JWT_SECRET in production
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -45,15 +45,15 @@ mongoose
   .then(async () => {
     console.log('MongoDB connected');
 
-    // Auto-seed destination catalog if database is fresh
+    // Safe initial bootstrap if MongoDB collection is completely fresh
     try {
       const count = await Destination.countDocuments();
       if (count === 0) {
-        await Destination.insertMany(seedDestinations);
-        console.log(`Auto-seeded ${seedDestinations.length} destinations into MongoDB`);
+        await Destination.insertMany(destinationsData);
+        console.log(`Bootstrapped ${destinationsData.length} destinations into MongoDB from destinations.json`);
       }
-    } catch (seedErr) {
-      console.error('Error during destination seeding:', seedErr.message);
+    } catch (bootstrapErr) {
+      console.error('Error during initial destination bootstrap:', bootstrapErr.message);
     }
   })
   .catch((err) => {

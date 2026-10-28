@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node test_auth_suite.js && node test_full_e2e.js"
+    "test": "node test_feature_suite.js && node test_routes_unit.js",
+    "test:e2e": "node test_auth_suite.js && node test_full_e2e.js",
+    "migrate:destinations": "node scripts/migrateDestinations.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

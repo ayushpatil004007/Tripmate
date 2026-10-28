@@ -1,0 +1,25 @@
+{
+  "slug": "new-york-city",
+  "name": "New York City",
+  "country": "United States",
+  "state": "New York",
+  "coverImage": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1200&q=80",
+  "gallery": [
+    {
+      "url": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Midtown Manhattan skyscrapers and yellow cabs on Fifth Avenue"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1534430480872-3498386e7856?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Lush green oasis of Central Park nestled among Manhattan high-rises"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Brooklyn Bridge wooden promenade leading to Lower Manhattan skyline"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1518391846015-55a9cc003b25?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Statue of Liberty standing tall in New York Harbor"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 /* ====================================================================
-   Navigation Bar Styling
+   Navigation Bar Styling with Home-Country Selector & Currency Converter
    ==================================================================== */
 
 .navbar {
@@ -40,12 +40,12 @@
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 1.8rem;
+  gap: 1.6rem;
   list-style: none;
 }
 
 .nav-link {
-  font-size: 0.95rem;
+  font-size: 0.925rem;
   font-weight: 500;
   color: var(--slate);
   transition: var(--transition);
@@ -76,31 +76,70 @@
 .navbar-auth {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.75rem;
+}
+
+/* Home Country Selector in Navbar */
+.nav-country-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.25rem 0.5rem;
+}
+
+.nav-country-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--slate-light);
+  letter-spacing: 0.5px;
+}
+
+.nav-country-select {
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dark);
+  cursor: pointer;
+  outline: none;
+  padding: 0.15rem 0.25rem;
+}
+
+.nav-converter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
 }
 
 .user-greeting {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.9rem;
+  gap: 0.5rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--dark);
   background-color: var(--bg-subtle);
-  padding: 0.35rem 0.85rem;
+  padding: 0.3rem 0.75rem;
   border-radius: var(--radius-full);
 }
 
 .user-avatar-circle {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background-color: var(--primary);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -114,13 +153,14 @@
   color: var(--dark);
 }
 
-/* Hide mobile-only auth buttons on desktop navigation */
-.navbar-links .mobile-auth {
+/* Hide mobile-only country/auth items on desktop */
+.navbar-links .mobile-auth,
+.navbar-links .mobile-country-item {
   display: none;
 }
 
 /* Responsive Media Query */
-@media (max-width: 868px) {
+@media (max-width: 992px) {
   .mobile-toggle {
     display: block;
   }
@@ -133,12 +173,14 @@
     background-color: #ffffff;
     flex-direction: column;
     padding: 1.5rem;
-    gap: 1.25rem;
+    gap: 1.15rem;
     box-shadow: var(--shadow-lg);
     border-bottom: 1px solid var(--border);
     transform: translateY(-150%);
     transition: var(--transition);
     visibility: hidden;
+    max-height: calc(100vh - 72px);
+    overflow-y: auto;
   }
 
   .navbar-links.open {
@@ -150,12 +192,12 @@
     display: none;
   }
 
+  .navbar-links .mobile-country-item,
   .navbar-links .mobile-auth {
     display: flex;
     flex-direction: column;
     width: 100%;
-    gap: 0.75rem;
-    padding-top: 1rem;
     border-top: 1px solid var(--border);
+    padding-top: 1rem;
   }
 }

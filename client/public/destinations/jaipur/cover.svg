@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+    <rect width="800" height="600" fill="#0f172a"/>
+    <circle cx="400" cy="250" r="120" fill="#0ea5e9" opacity="0.3"/>
+    <text x="50%" y="45%" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="44" font-weight="700">Jaipur</text>
+    <text x="50%" y="55%" text-anchor="middle" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="20" letter-spacing="3">INDIA</text>
+    <text x="50%" y="65%" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="16">Royal Heritage • Culture & Heritage • Historical</text>
+  </svg>

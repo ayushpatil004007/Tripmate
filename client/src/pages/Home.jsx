@@ -1,10 +1,12 @@
 // Home Page - TripMate Travel Planning Web Application
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCountry } from '../context/CountryContext';
 import '../css/home.css';
 
 const Home = ({ user }) => {
   const navigate = useNavigate();
+  const { homeCountry, preferredCurrency } = useCountry();
 
   // Navigation interceptor: If not logged in, always redirect to Login/Register (/auth)
   const handleProtectedNav = (targetPath) => {
@@ -27,7 +29,7 @@ const Home = ({ user }) => {
             Start your exciting journey to explore the world
           </h1>
           <p className="hero-subtitle">
-            TripMate is your all-in-one travel companion. Discover scenic destinations, organize your custom trip timeline, manage daily budgets in rupees (₹), and track expenses effortlessly.
+            TripMate is your all-in-one travel companion. Discover domestic and international destinations, organize your custom trip timeline, manage multi-currency travel budgets, and track expenses effortlessly.
           </p>
           <div className="hero-actions">
             {/* If unauthenticated, sends to /auth; if authenticated, sends to /dashboard */}
@@ -66,7 +68,7 @@ const Home = ({ user }) => {
               <div className="feature-icon-wrapper">🌍</div>
               <h3>Explore & Trip Dashboard</h3>
               <p>
-                Browse hand-curated global destinations with real-time costs and photos. Create, view, update, and manage your personalized trips.
+                Browse hand-curated global destinations with responsive photo galleries, cost estimates, and domestic/international filters relative to your home country ({homeCountry}).
               </p>
               <button
                 className="btn btn-outline-primary btn-sm"
@@ -80,9 +82,9 @@ const Home = ({ user }) => {
             {/* Feature 2 */}
             <div className="feature-card">
               <div className="feature-icon-wrapper">💳</div>
-              <h3>Expense & Budget Tracker</h3>
+              <h3>Multi-Currency Expense Tracker</h3>
               <p>
-                Set trip-wide and daily budgets in rupees (₹). Track categorized expenditures (Food, Travel, Hotels, Other) with visual breakdown charts.
+                Set trip budgets in any currency ({preferredCurrency}, USD, EUR, etc.). Log categorized expenditures, convert currencies on the fly, and view visual breakdown charts.
               </p>
               <button
                 className="btn btn-outline-primary btn-sm"
@@ -114,7 +116,7 @@ const Home = ({ user }) => {
           <div className="cta-banner" style={{ marginTop: '4rem', padding: '2.5rem', borderRadius: '16px', textAlign: 'center' }}>
             <h3 style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }}>Ready to Plan Your Next Great Adventure?</h3>
             <p style={{ maxWidth: '650px', margin: '0 auto 1.5rem', fontSize: '1rem', color: '#cbd5e1' }}>
-              Create custom itineraries, manage travel budgets in rupees (₹), and explore world-class destinations effortlessly.
+              Create custom itineraries, manage multi-currency travel budgets, and explore world-class destinations effortlessly.
             </p>
             <button
               className="btn btn-accent"

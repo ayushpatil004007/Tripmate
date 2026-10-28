@@ -1,4 +1,4 @@
-// Trip Management REST Routes
+// Trip Management REST Routes with Currency Support
 const express = require('express');
 const router = express.Router();
 const Trip = require('../models/Trip');
@@ -14,7 +14,9 @@ router.use(authMiddleware);
 // @access  Private
 router.get('/', async (req, res) => {
   try {
-    const trips = await Trip.find({ user: req.user.id }).sort({ createdAt: -1 });
+    const trips = await Trip.find({ user: req.user.id })
+      .populate('destinationId')
+      .sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: trips.length, data: trips });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to retrieve trips', error: error.message });
@@ -26,7 +28,7 @@ router.get('/', async (req, res) => {
 // @access  Private
 router.get('/:id', async (req, res) => {
   try {
-    const trip = await Trip.findOne({ _id: req.params.id, user: req.user.id });
+    const trip = await Trip.findOne({ _id: req.params.id, user: req.user.id }).populate('destinationId');
     if (!trip) {
       return res.status(404).json({ success: false, message: 'Trip not found or unauthorized' });
     }
@@ -37,11 +39,11 @@ router.get('/:id', async (req, res) => {
 });
 
 // @route   POST /api/trips
-// @desc    Create a new trip
+// @desc    Create a new trip with currency preference
 // @access  Private
 router.post('/', async (req, res) => {
   try {
-    const { title, destination, startDate, endDate, totalBudget, dailyBudget, notes } = req.body;
+    const { title, destination, destinationId, startDate, endDate, totalBudget, dailyBudget, currency, notes } = req.body;
 
     if (!title || !destination || !startDate || !endDate) {
       return res.status(400).json({
@@ -54,10 +56,12 @@ router.post('/', async (req, res) => {
       user: req.user.id,
       title,
       destination,
+      destinationId: destinationId || null,
       startDate,
       endDate,
       totalBudget: Number(totalBudget) || 0,
       dailyBudget: Number(dailyBudget) || 0,
+      currency: (currency || 'INR').toUpperCase(),
       notes: notes || ''
     });
 
@@ -76,7 +80,7 @@ router.post('/', async (req, res) => {
 // @access  Private
 router.put('/:id', async (req, res) => {
   try {
-    const { title, destination, startDate, endDate, totalBudget, dailyBudget, notes, status } = req.body;
+    const { title, destination, destinationId, startDate, endDate, totalBudget, dailyBudget, currency, notes, status } = req.body;
 
     let trip = await Trip.findOne({ _id: req.params.id, user: req.user.id });
     if (!trip) {
@@ -86,10 +90,12 @@ router.put('/:id', async (req, res) => {
     // Update fields
     if (title !== undefined) trip.title = title;
     if (destination !== undefined) trip.destination = destination;
+    if (destinationId !== undefined) trip.destinationId = destinationId || null;
     if (startDate !== undefined) trip.startDate = startDate;
     if (endDate !== undefined) trip.endDate = endDate;
     if (totalBudget !== undefined) trip.totalBudget = Number(totalBudget);
     if (dailyBudget !== undefined) trip.dailyBudget = Number(dailyBudget);
+    if (currency !== undefined) trip.currency = String(currency).trim().toUpperCase();
     if (notes !== undefined) trip.notes = notes;
     if (status !== undefined) trip.status = status;
 

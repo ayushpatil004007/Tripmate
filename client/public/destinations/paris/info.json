@@ -1,0 +1,25 @@
+{
+  "slug": "paris",
+  "name": "Paris",
+  "country": "France",
+  "state": "Île-de-France",
+  "coverImage": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80",
+  "gallery": [
+    {
+      "url": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Eiffel Tower illuminated against golden hour Parisian sky"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Pont Alexandre III bridge spanning the historic Seine River"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1520939817895-060bdef4d18f?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Louvre glass pyramid courtyard illuminated at twilight"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Charming Montmartre hillside cobbled street and Sacré-Cœur"
+    }
+  ]
+}

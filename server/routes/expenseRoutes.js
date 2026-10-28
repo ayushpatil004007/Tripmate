@@ -1,12 +1,36 @@
-// Expense Tracking REST Routes
+// Expense Tracking REST Routes with Multi-Currency Calculations
 const express = require('express');
 const router = express.Router();
 const Expense = require('../models/Expense');
 const Trip = require('../models/Trip');
 const authMiddleware = require('../middleware/authMiddleware');
+const exchangeRatesData = require('../data/exchangeRates.json');
 
 // Protect all expense routes with authentication
 router.use(authMiddleware);
+
+// Helper for currency conversion using static rates
+const convertAmount = (amount, sourceCurrency, targetCurrency) => {
+  const num = Number(amount);
+  if (!num || isNaN(num) || num === 0) return 0;
+
+  const src = String(sourceCurrency || 'INR').trim().toUpperCase();
+  const tgt = String(targetCurrency || 'INR').trim().toUpperCase();
+
+  if (src === tgt) return num;
+
+  const rates = exchangeRatesData.rates || {};
+  const srcRate = rates[src];
+  const tgtRate = rates[tgt];
+
+  if (!srcRate || !tgtRate) {
+    // If either rate is unknown, return unchanged
+    return num;
+  }
+
+  // Formula: convertedAmount = amount × targetRate ÷ sourceRate
+  return (num * tgtRate) / srcRate;
+};
 
 // @route   GET /api/expenses
 // @desc    Retrieve all expenses for a given trip
@@ -38,11 +62,12 @@ router.get('/', async (req, res) => {
 });
 
 // @route   GET /api/expenses/summary/:tripId
-// @desc    Calculate budget totals and category breakdowns for visual charts
+// @desc    Calculate multi-currency budget totals and category breakdowns
 // @access  Private
 router.get('/summary/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
+    const { displayCurrency } = req.query;
 
     const trip = await Trip.findOne({ _id: tripId, user: req.user.id });
     if (!trip) {
@@ -51,26 +76,44 @@ router.get('/summary/:tripId', async (req, res) => {
 
     const expenses = await Expense.find({ trip: tripId, user: req.user.id });
 
-    // Aggregate category totals and total spending
-    const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
-    const totalBudget = trip.totalBudget || 0;
-    const remainingBalance = totalBudget - totalSpent;
+    // Target currency for aggregate reporting
+    const tripCurrency = (trip.currency || 'INR').toUpperCase();
+    const activeCurrency = (displayCurrency || tripCurrency).toUpperCase();
 
+    // Convert trip total and daily budgets to active display currency
+    const convertedTotalBudget = convertAmount(trip.totalBudget || 0, tripCurrency, activeCurrency);
+    const convertedDailyBudget = convertAmount(trip.dailyBudget || 0, tripCurrency, activeCurrency);
+
+    // Sum all expenses converted to active display currency
+    let totalSpent = 0;
     const categories = ['Food', 'Travel', 'Hotels', 'Other'];
-    const categoryTotals = categories.reduce((acc, cat) => {
-      acc[cat] = expenses
-        .filter((item) => item.category === cat)
-        .reduce((sum, item) => sum + item.amount, 0);
-      return acc;
-    }, {});
+    const categoryTotals = { Food: 0, Travel: 0, Hotels: 0, Other: 0 };
+
+    for (const exp of expenses) {
+      const expCurrency = (exp.currency || 'INR').toUpperCase();
+      const converted = convertAmount(exp.amount, expCurrency, activeCurrency);
+      totalSpent += converted;
+
+      if (categoryTotals[exp.category] !== undefined) {
+        categoryTotals[exp.category] += converted;
+      } else {
+        categoryTotals['Other'] += converted;
+      }
+    }
+
+    const remainingBalance = convertedTotalBudget - totalSpent;
 
     res.status(200).json({
       success: true,
       data: {
         tripId: trip._id,
         tripTitle: trip.title,
-        totalBudget,
-        dailyBudget: trip.dailyBudget || 0,
+        tripCurrency,
+        displayCurrency: activeCurrency,
+        rawTotalBudget: trip.totalBudget || 0,
+        rawDailyBudget: trip.dailyBudget || 0,
+        totalBudget: convertedTotalBudget,
+        dailyBudget: convertedDailyBudget,
         totalSpent,
         remainingBalance,
         categoryTotals,
@@ -83,11 +126,11 @@ router.get('/summary/:tripId', async (req, res) => {
 });
 
 // @route   POST /api/expenses
-// @desc    Record a new expense
+// @desc    Record a new expense with currency preservation
 // @access  Private
 router.post('/', async (req, res) => {
   try {
-    const { tripId, title, amount, category, date, note } = req.body;
+    const { tripId, title, amount, currency, category, date, note } = req.body;
 
     if (!tripId || !title || amount === undefined || !category) {
       return res.status(400).json({
@@ -101,14 +144,17 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Trip not found or unauthorized' });
     }
 
+    const expenseCurrency = currency ? String(currency).trim().toUpperCase() : (trip.currency || 'INR');
+
     const expense = await Expense.create({
       trip: tripId,
       user: req.user.id,
-      title,
+      title: String(title).trim(),
       amount: Number(amount),
+      currency: expenseCurrency,
       category,
       date: date || new Date(),
-      note: note || ''
+      note: note ? String(note).trim() : ''
     });
 
     res.status(201).json({
@@ -126,18 +172,19 @@ router.post('/', async (req, res) => {
 // @access  Private
 router.put('/:id', async (req, res) => {
   try {
-    const { title, amount, category, date, note } = req.body;
+    const { title, amount, currency, category, date, note } = req.body;
 
     let expense = await Expense.findOne({ _id: req.params.id, user: req.user.id });
     if (!expense) {
       return res.status(404).json({ success: false, message: 'Expense not found or unauthorized' });
     }
 
-    if (title !== undefined) expense.title = title;
+    if (title !== undefined) expense.title = String(title).trim();
     if (amount !== undefined) expense.amount = Number(amount);
+    if (currency !== undefined) expense.currency = String(currency).trim().toUpperCase();
     if (category !== undefined) expense.category = category;
     if (date !== undefined) expense.date = date;
-    if (note !== undefined) expense.note = note;
+    if (note !== undefined) expense.note = String(note).trim();
 
     const updatedExpense = await expense.save();
 

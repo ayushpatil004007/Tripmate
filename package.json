@@ -1,0 +1,14 @@
+{
+  "name": "tripmate-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TripMate - Travel Planning & Multi-Currency Expense Management Web App",
+  "scripts": {
+    "build": "npm --prefix client run build",
+    "client": "npm --prefix client run dev",
+    "server": "npm --prefix server run dev",
+    "test": "npm --prefix server test",
+    "test:features": "npm --prefix server test",
+    "migrate:destinations": "npm --prefix server run migrate:destinations"
+  }
+}

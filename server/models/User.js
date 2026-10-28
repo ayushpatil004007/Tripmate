@@ -19,6 +19,22 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide a password'],
       minlength: 6
+    },
+    homeCountry: {
+      type: String,
+      default: 'India',
+      trim: true
+    },
+    preferredCurrency: {
+      type: String,
+      default: 'INR',
+      uppercase: true,
+      trim: true
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user'
     }
   },
   {

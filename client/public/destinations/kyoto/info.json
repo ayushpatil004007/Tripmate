@@ -1,0 +1,25 @@
+{
+  "slug": "kyoto",
+  "name": "Kyoto",
+  "country": "Japan",
+  "state": "Kansai",
+  "coverImage": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1200&q=80",
+  "gallery": [
+    {
+      "url": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Historic Yasaka Pagoda in Higashiyama district"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1478436127897-769e00d0c71e?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Fushimi Inari shrine with thousands of vermilion torii gates"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Arashiyama bamboo grove tranquil morning pathway"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=1200&q=80",
+      "caption": "Kinkaku-ji Golden Pavilion shimmering across the reflection pond"
+    }
+  ]
+}
